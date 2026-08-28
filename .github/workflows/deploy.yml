@@ -1,0 +1,47 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy_master:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          envs: GITHUB_TOKEN
+          script: |
+            # Exit immediately if a command exits with a non-zero status
+            set -e 
+            
+            # Navigate to the correct Webuzo home folder path
+            cd /home/goridenetincwdin/mapi.goride.net.in || { echo "Error: Directory not found!"; exit 1; }
+            
+            echo "=== Deployment started at $(date) ==="
+            
+            if [ ! -d ".git" ]; then
+                echo "Not a git repository. Initializing..."
+                git init
+            fi
+            
+            git remote remove origin 2>/dev/null || true
+            git remote add origin "https://x-access-token:$GITHUB_TOKEN@github.com/srihemainfo/goride_india_api.git"
+            
+            echo "Pulling latest changes..."
+            git fetch origin master
+            git reset --hard origin/master
+            
+            echo "Clearing application cache..."
+            php artisan optimize:clear
+            
+            echo "=== Deployment finished successfully bro==="
