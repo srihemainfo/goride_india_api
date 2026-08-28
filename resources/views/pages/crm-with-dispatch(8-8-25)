@@ -1,0 +1,175 @@
+@extends('layouts.app')
+
+@section('content')
+
+<style>
+
+
+
+</style>
+
+    <!-- Breadcrumb -->
+
+    <section class="page-header">
+        <div class="page-header-shape"></div>
+        <div class="container">
+            <div class="page-header-info">
+                <h4>CRM with Dispatch System</h4>
+                <h1>Empower Your Business <br> with <span>CRM with Dispatch System!</span></h1>
+                <p>All the tools your taxi business <br> needs in one powerful platform!</p>
+                    <a href="signup" class="cs_btn cs_style_2 mt-4">Get start for free&nbsp;<i class="fa-regular fa-car-side-bolt"></i></a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="about-section padding">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="section-heading mb-40">
+                        <h2 class="wow fadeIn" data-wow-duration="2s">More than just a CRM</h2>
+                        <p class="wow fadeIn" data-wow-duration="2s">GoRide’s AI-based dispatch software is designed to optimize every aspect of your taxi service. By combining a powerful Customer Relationship Management (CRM) system with an intelligent dispatch solution, we offer an all-in-one platform tailored to meet the needs of modern taxi companies.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="section-heading text-center mb-40">
+                        <h2 class="wow fadeIn" data-wow-duration="2s">Key Features</h2>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s">
+                    <div class="key_features_card">
+                        <h4>AI-Powered Dispatching</h4>
+                        <p>Utilize cutting-edge artificial intelligence to automate your dispatch process. Our AI engine quickly matches the right driver to the right ride, reducing wait times and increasing customer satisfaction. Say goodbye to manual dispatch errors and hello to a streamlined, efficient process that works for you.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+                    <div class="key_features_card">
+                        <h4>Comprehensive CRM Integration</h4>
+                        <p>Keep track of your customers' preferences, ride history, and feedback all in one place. With GoRide’s CRM capabilities, you can build strong customer relationships, improve service quality, and enhance customer loyalty. Our system allows you to manage your customer interactions effortlessly.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>Real-Time Tracking and Analytics</h4>
+                        <p>Monitor your fleet in real time with our intuitive dashboard. View driver locations, ride statuses, and traffic conditions at a glance. Our analytics tools provide detailed insights into your operations, helping you make data-driven decisions to improve efficiency and profitability.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s">
+                    <div class="key_features_card">
+                        <h4>Seamless Communication</h4>
+                        <p>Enhance communication between your dispatch team, drivers, and customers. GoRide’s system includes in-app messaging, automated notifications, and direct driver-customer communication channels to ensure everyone stays informed and connected throughout the ride.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+                    <div class="key_features_card">
+                        <h4>Flexible Payment Options</h4>
+                        <p>Offer your customers multiple payment methods, from cash to credit card to mobile payments. Our system integrates with various payment gateways, ensuring a smooth transaction process and faster payouts for your drivers.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>Customizable and Scalable Solutions</h4>
+                        <p>Whether you're a small taxi operator or a large fleet, GoRide adapts to your needs. Our customizable platform allows you to tailor features and functionalities to match your business model. As your company grows, GoRide scales with you, providing robust support at every stage.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="how-app-work-section" id="how-it-works">
+    	<div class="container">
+    		<div class="row">
+    			<div class="col-md-6 how-app-work-slider-content d-flex align-items-center wow fadeIn" data-wow-duration="2s">
+    			    <img src="{{ asset('goride/img/crm-with-dispatch-mockup.webp') }}">
+    			</div>
+    			<div class="col-md-6">
+    				<div class="how-app-work-content-wrap">
+    					<div class="title wow fadeIn" data-wow-duration="2s">
+    						<h3>Benefits for Taxi Companies</h3>
+    					</div>
+    					<div class="how-app-work-content" id="how-app-work-slider-pager">
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-chart-line"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Increased Efficiency</h4>
+        								<p>Reduce operational costs with automated dispatch and optimize driver routes with AI-driven recommendations.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+    						    <div class="single-how-app-work">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-smile"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Enhanced Customer Experience</h4>
+        								<p>Provide faster, more reliable service with real-time updates and personalized experiences.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-thumbs-up"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Improved Driver Satisfaction</h4>
+        								<p>Keep your drivers happy with efficient dispatch, fair job distribution, and fast payments.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="2000ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-chart-pie"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Better Business Insights</h4>
+        								<p>Leverage advanced analytics to gain insights into your operations and make informed decisions that drive growth.</p>
+        							</div>
+        						</div>
+    						</a>
+    					</div>
+    				</div>
+    			</div>
+    		</div>
+    	</div>
+    </section>
+    
+@endsection
+
+@section('script')
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js" integrity="sha512-Eak/29OTpb36LLo2r47IpVzPBLXnAMPAVypbSZiZ4Qkf8p/7S/XRG5xp7OKWPPYfJT6metI+IORkR5G8F900+g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        var wow = new WOW( {
+            boxClass:     'wow',      // animated element css class (default is wow)
+            animateClass: 'animated', // animation css class (default is animated)
+            offset:       0,          // distance to the element when triggering the animation (default is 0)
+            mobile:       true,       // trigger animations on mobile devices (default is true)
+            live:         true,       // act on asynchronously loaded content (default is true)
+            callback:     function(box) {
+              // the callback is fired every time an animation is started
+              // the argument that is passed in is the DOM node being animated
+            },
+            scrollContainer: null // optional scroll container selector, otherwise use window
+          }
+        );
+        wow.init();
+    </script>
+    
+@endsection

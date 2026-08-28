@@ -1,0 +1,18 @@
+# Laravel
+/vendor/
+/.env
+/storage/framework/
+/storage/logs/
+/bootstrap/cache/
+/public/storage
+/resources/views/include
+/resources/views/layouts
+/routes/web.php
+/config
+/database
+# cPanel/Other
+*.zip
+*.log
+error_log
+.user.ini
+php.ini

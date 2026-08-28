@@ -1,0 +1,9 @@
+{
+    "applinks": {
+        "apps": [],
+        "details": [{
+            "appID": "Q8ANN98865.com.shi.myPassenger",
+            "paths": ["/passenger/*"]
+        }]
+    }
+}

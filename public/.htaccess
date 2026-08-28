@@ -1,0 +1,85 @@
+# Canonical https/www
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+
+	# 1. Force HTTPS for everything
+	RewriteCond %{HTTPS} off
+	RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+	
+	# 2. ONLY force www for the main root domain (goride.run -> www.goride.run)
+	# This prevents breaking subdomains like data.goride.run or mapi.goride.run
+	RewriteCond %{HTTP_HOST} ^goride\.run$ [NC]
+	RewriteRule (.*) https://www.goride.run%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<ifModule mod_headers.c>
+        Header set Connection keep-alive
+        Header set Strict-Transport-Security "max-age=31536000" env=HTTPS
+        Header always set X-Frame-Options "deny"
+        Header setifempty Referrer-Policy: same-origin
+        Header set X-XSS-Protection "1; mode=block"
+        Header set X-Permitted-Cross-Domain-Policies "none"
+        Header set Referrer-Policy "no-referrer"
+        Header set X-Content-Type-Options: nosniff
+        Header set Permissions-Policy "accelerometer=(), autoplay=(), camera=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), publickey-credentials-get=(), usb=()"
+       #Header set Content-Security-Policy: "default-src 'self' *.pointel.com *.cloudflare.com *.google.com *.gstatic.com *.doubleclick.net *.ytimg.com *.googleapis.com *.sitelock.com *.google.co.jp *.google-analytics.com *.googleapis.com *.googletagmanager.com  *.youtube.com *.ggpht.com";
+</ifModule>
+
+# BEGIN cPanel-generated php ini directives, do not edit
+# Manual editing of this file may result in unexpected behavior.
+# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
+# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
+<IfModule php8_module>
+   php_flag display_errors Off
+   php_value max_execution_time 30
+   php_value max_input_time 60
+   php_value max_input_vars 1000
+   php_value memory_limit 128M
+   php_value post_max_size 8M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php83"
+   php_value upload_max_filesize 20M
+   php_flag zlib.output_compression Off
+</IfModule>
+<IfModule lsapi_module>
+   php_flag display_errors Off
+   php_value max_execution_time 30
+   php_value max_input_time 60
+   php_value max_input_vars 1000
+   php_value memory_limit 128M
+   php_value post_max_size 8M
+   php_value session.gc_maxlifetime 1440
+   php_value session.save_path "/var/cpanel/php/sessions/ea-php83"
+   php_value upload_max_filesize 20M
+   php_flag zlib.output_compression Off
+</IfModule>
+# END cPanel-generated php ini directives, do not edit
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php83” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php83___lsphp .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit

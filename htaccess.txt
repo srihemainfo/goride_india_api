@@ -1,0 +1,17 @@
+<IfModule mod_env.c>
+    SetEnv no-gzip 1
+    SetEnv proxy-sendchunked 1
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    Options +FollowSymLinks -Indexes
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+AuthName "public"
+AuthUserFile /home/goridenetincwdin/.htpasswds/public_html/passwd
+
+
+

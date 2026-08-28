@@ -1,0 +1,492 @@
+<style>
+
+    .modal.right.fade.in .modal-dialog {
+
+right:0 !important;
+
+transform: translateX(-50%);
+
+}
+
+.modal.right .modal-content {
+
+height:90%;
+
+border-radius:0;
+
+}
+
+.modal.right .modal-dialog {
+
+position: fixed;
+
+margin: auto;
+
+height: 100%;
+
+-webkit-transform: translate3d(0%, 0, 0);
+
+-ms-transform: translate3d(0%, 0, 0);
+
+-o-transform: translate3d(0%, 0, 0);
+
+transform: translate3d(0%, 0, 0);
+
+width: 100%;
+
+}
+
+.modal.right.fade.in .modal-dialog {
+
+transform: translateX(0%);
+
+}
+
+.modal.right.fade .modal-dialog {
+
+right: 1%;
+
+-webkit-transition: opacity 0.3s linear, right 0.3s ease-out;
+
+-moz-transition: opacity 0.3s linear, right 0.3s ease-out;
+
+-o-transition: opacity 0.3s linear, right 0.3s ease-out;
+
+transition: opacity 0.3s linear, right 0.3s ease-out;
+
+}
+
+.modal-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    padding: 7px 10px 11px 10px;
+
+    border-bottom: 1px solid #e9ecef;
+
+    border-top-left-radius: 0.3rem;
+
+    border-top-right-radius: 0.3rem;
+
+}    
+
+    
+
+   .modal.right .modal-header {background-color:#0f4260; color:#fff}
+
+    .modal.right .modal-header::after {content:""; display:inline-block;}
+
+    .modal.right .close {text-shadow:none; opacity:1; color:#ff4d4d; font-size:26px}
+
+
+
+</style>
+
+
+
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+
+    <style>
+
+        img {
+
+            max-width: 100%;
+
+        }
+
+    </style>
+
+
+
+
+
+<div class="modal right fade" id="vehichle_form-modal" role="dialog" data-backdrop="static">
+
+  <div class="modal-dialog modal-lg">
+
+  
+
+    <!-- Modal content-->
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+       
+
+        <h4 class="modal-title">Add Fleet</h4>
+
+        <button type="button" class="close" data-dismiss="modal" onclick="reset()" id="flfrm_dis">&times;</button>
+
+      </div>
+
+    <div class="modal-body">
+
+        <form method="post" id="fleet_create_form"  enctype="multipart/form-data">
+
+       
+
+          <div class="row">
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="name" class="col-form-label">Fleet Name<span class="required">&nbsp;*</span></label>
+
+                            <input type="text" class="form-control" name="name" id="name" placeholder="Enter Fleet Name" oninput="this.value = this.value.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 30);">
+
+                            <p class="text-danger invalid-fleet-name"></p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="passenger" class="col-form-label">Passengers<span class="required">&nbsp;*</span></label>
+
+                            <input type="number" class="form-control" name="passenger" id="passenger" placeholder="Enter passenger count" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2);">
+
+                            <p class="text-danger invalid-passenger"></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+<div class="row">
+
+                    
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="luggage" class="col-form-label">luggage<span class="required">&nbsp;</span></label>
+
+                            <input type="number" class="form-control" name="luggage" id="luggage" placeholder="Enter luggage count" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2);">
+
+                            <p class="text-danger invalid-luggage"></p>
+
+                        </div>
+
+                    </div>
+
+                     <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="hand_luggage" class="col-form-label">Hand Luggage<span class="required">&nbsp;</span></label>
+
+                            <input type="number" class="form-control" name="hand_luggage" id="hand_luggage" placeholder="Enter hand luggage count" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2);">
+
+                            <p class="text-danger invalid-hand-luggage"></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="row">
+
+                   
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="child" class="col-form-label">Child Seats/ Booster<span class="required">&nbsp;</span></label>
+
+                            <input type="number" class="form-control" name="child" id="child" placeholder="Enter child seats count" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2);">
+
+                            <p class="text-danger invalid-child"></p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                            <div class="form-group">
+
+                                <label for="name" class="col-form-label">Fleet Image<span class="required">&nbsp;*</span></label>
+
+                                <input type="file" class="" name="file" id="fileInput" placeholder="Enter Fleet Image">
+
+                                <p class="text-danger invalid-image"></p>
+
+                               <img id="edit_imagePreview" name="edit_imagePreview" src="">
+
+                            </div>
+
+                            
+
+                            <input type="hidden" name="fleet_id" id="fleet_id">
+
+
+
+                            <div class="mt-3">
+
+                                <img id="croppedImage" alt="Cropped Fleet Image" style="display:none; max-width:100%;">
+
+                            </div>
+
+                        </div>
+
+                </div>
+
+
+
+                <input type="hidden" id="hidden_imageName" name="upload_photo">
+
+
+
+
+                </form>
+
+    <?php  /*
+
+       <form method="post" id="fleet_create_form">
+
+       <div class="row">
+
+           <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="name" class="col-form-label">Fleet Brand<span class="required">&nbsp;*</span></label>
+
+                            <select class="form-control" name="brand_id" id="veh_brand_id">
+
+                                <option value="">Select</option>
+
+                            </select>
+
+                            <p class="text-danger invalid-fleet-name"></p>
+
+                            <input type="hidden" name="fleet_id" id="veh_fleet_id">
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="name" class="col-form-label">Fleet Model<span class="required">&nbsp;*</span></label>
+
+                            <select class="form-control" name="model_id" id="veh_model_id">
+
+                                <option value="">Select</option>
+
+                            </select>
+
+                            <p class="text-danger invalid-fleet-name"></p>
+
+                        </div>
+
+                    </div>
+
+       </div>
+
+          <div class="row">
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="name" class="col-form-label">Fleet Type<span class="required">&nbsp;*</span></label>
+
+                            <input type="text" class="form-control" name="name" id="veh_name" placeholder="Enter Fleet Name">
+
+                            <p class="text-danger invalid-fleet-name"></p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="passenger" class="col-form-label">Passengers<span class="required">&nbsp;*</span></label>
+
+                            <input type="number" class="form-control" name="passenger" id="veh_passenger" placeholder="Enter passenger count">
+
+                            <p class="text-danger invalid-passenger"></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+<div class="row">
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="no_of_seats" class="col-form-label">Number of seats<span class="required">&nbsp;*</span></label>
+
+                            <input type="text" class="form-control" name="no_of_seats" id="veh_no_of_seats" placeholder="Enter seats count">
+
+                            <p class="text-danger invalid-no-seats"></p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="min" class="col-form-label">Min<span class="required">&nbsp;*</span></label>
+
+                            <input type="number" class="form-control" name="min" id="veh_min" placeholder="Enter min count">
+
+                            <p class="text-danger invalid-min"></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+<div class="row">
+
+                    
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="max" class="col-form-label">Max<span class="required">&nbsp;*</span></label>
+
+                            <input type="number" class="form-control" name="max" id="veh_max" placeholder="Enter max count">
+
+                            <p class="text-danger invalid-max"></p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="luggage" class="col-form-label">luggage<span class="required">&nbsp;*</span></label>
+
+                            <input type="number" class="form-control" name="luggage" id="veh_luggage" placeholder="Enter luggage count">
+
+                            <p class="text-danger invalid-luggage"></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="hand_luggage" class="col-form-label">Hand Luggage<span class="required">&nbsp;*</span></label>
+
+                            <input type="number" class="form-control" name="hand_luggage" id="veh_hand_luggage" placeholder="Enter hand luggage count">
+
+                            <p class="text-danger invalid-hand-luggage"></p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="child" class="col-form-label">Child Seats<span class="required">&nbsp;*</span></label>
+
+                            <input type="number" class="form-control" name="child" id="veh_child" placeholder="Enter child seats count">
+
+                            <p class="text-danger invalid-child"></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="order" class="col-form-label">Booster</label>
+
+                            <input type="number" class="form-control" name="booster" id="veh_booster" placeholder="Enter booster count" value="0">
+
+                            <p class="text-danger invalid-order"></p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-sm-6">
+
+                        <div class="form-group">
+
+                            <label for="order" class="col-form-label">Order</label>
+
+                            <input type="number" class="form-control" name="order" id="veh_order" placeholder="Enter order" value="0">
+
+                            <p class="text-danger invalid-order"></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                </form>
+
+              */   ?>
+
+        </div>
+
+      <div class="modal-footer">
+
+        <button type="button" id="fleet_create_sub" class="btn btn-success">Save</button>
+
+        <button type="button" class="btn btn-default close-btn" data-bs-dismiss="modal"  onclick="reset()">Close</button>
+
+      </div>
+
+    </div>
+
+    
+
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+<!-- modal.// -->

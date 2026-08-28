@@ -1,0 +1,172 @@
+@extends('layouts.app')
+
+@section('content')
+
+<style>
+
+
+
+</style>
+
+    <!-- Breadcrumb -->
+
+    <section class="page-header">
+        <div class="page-header-shape"></div>
+        <div class="container">
+            <div class="page-header-info">
+                <h4>GoRide Driver App</h4>
+                <h1>Boost Your Productivity <br> with <span>Our Driver App!</span></h1>
+                <p>All the features you need to manage rides efficiently and <br> enhance your driving experience!</p>
+                    <a href="signup" class="cs_btn cs_style_2 mt-4">Get start for free&nbsp;<i class="fa-regular fa-car-side-bolt"></i></a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="about-section padding">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="section-heading mb-40">
+                        <h4 class="wow fadeIn" data-wow-duration="2s"><span></span>GoRide Driver App</h4>
+                        <h2 class="wow fadeIn" data-wow-duration="2s">Empowering Drivers with AI Precision</h2>
+                        <p class="wow fadeIn" data-wow-duration="2s">At GoRide, we believe in empowering drivers with the tools they need to succeed. Our AI-based dispatch software offers a powerful and intuitive Driver App, specifically designed to enhance the efficiency and earnings of taxi drivers. Whether you’re an independent driver or part of a larger fleet, the GoRide Driver App is your key to a seamless driving experience.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="section-heading text-center mb-40">
+                        <h2 class="wow fadeIn" data-wow-duration="2s">Why Choose the GoRide Driver App?</h2>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s">
+                    <div class="key_features_card">
+                        <h4>AI-Powered Dispatching</h4>
+                        <p>Our advanced AI algorithms ensure that you receive the most optimized jobs based on your location, availability, and driving patterns. With GoRide, you spend less time waiting and more time earning.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+                    <div class="key_features_card">
+                        <h4>Real-Time Navigation</h4>
+                        <p>Integrated with cutting-edge GPS technology, the GoRide Driver App provides real-time navigation and traffic updates. This means fewer delays and quicker routes, helping you provide a better service to your passengers.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>Flexible Scheduling</h4>
+                        <p>With our flexible scheduling feature, you can choose when you want to work. Go online and offline with just a tap, allowing you to manage your time and balance work with your personal life.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s">
+                    <div class="key_features_card">
+                        <h4>Instant Bookings and Alerts</h4>
+                        <p>Receive instant alerts for new ride requests, cancellations, and any changes in your schedule. With GoRide, you are always in the loop, ensuring that you never miss an opportunity.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+                    <div class="key_features_card">
+                        <h4>Secure and Transparent Payments</h4>
+                        <p>Say goodbye to payment hassles. GoRide’s Driver App provides secure, transparent, and quick payment processing. Track your earnings in real time and receive detailed summaries of all your rides.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>Driver Support and Community</h4>
+                        <p>At GoRide, we care about our drivers. Our dedicated support team is available 24/7 to assist you with any issues or questions. Plus, connect with other drivers through our app community for tips, advice, and camaraderie.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="how-app-work-section" id="how-it-works">
+    	<div class="container">
+    		<div class="row">
+    			<div class="col-md-6">
+    				<div class="how-app-work-content-wrap">
+    					<div class="title wow fadeIn" data-wow-duration="2s">
+    						<h3>Get Started with GoRide Driver App</h3>
+    					</div>
+    					<div class="how-app-work-content" id="how-app-work-slider-pager">
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-user-plus"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Sign Up</h4>
+        								<p>Download the GoRide Driver App from the App Store or Google Play, and sign up with your details.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+    						    <div class="single-how-app-work">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-check-circle"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Get Verified</h4>
+        								<p>Complete a simple verification process to ensure safety and security for all users.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-car"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Start Driving</h4>
+        								<p>Once verified, you’re ready to hit the road. Go online, accept rides, and start earning!</p>
+        							</div>
+        						</div>
+    						</a>
+    					</div>
+    					<!-- Links -->
+    					<a href="#" class="download-btn wow fadeIn" data-wow-duration="2s">
+    						<i class="fab fa-apple"></i>
+    						<span class="inner"> <span class="avail">Available on</span> <span class="store-name">App Store</span></span>
+    					</a>
+    					<a href="https://play.google.com/store/apps/details?id=com.shi.my_rider_driver&pcampaignid=web_share" target="_blank" class="download-btn wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+    						<i class="fab fa-google-play"></i>
+    						<span class="inner"><span class="avail">Available on</span> <span class="store-name">Google play</span></span>
+    					</a>
+    				</div>
+    			</div>
+    			<div class="col-md-6 how-app-work-slider-content d-flex align-items-center wow fadeIn" data-wow-duration="2s">
+    			    <img src="{{ asset('goride/img/driver-app-mockup.webp') }}">
+    			</div>
+    		</div>
+    	</div>
+    </section>
+    
+@endsection
+
+@section('script')
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js" integrity="sha512-Eak/29OTpb36LLo2r47IpVzPBLXnAMPAVypbSZiZ4Qkf8p/7S/XRG5xp7OKWPPYfJT6metI+IORkR5G8F900+g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        var wow = new WOW( {
+            boxClass:     'wow',      // animated element css class (default is wow)
+            animateClass: 'animated', // animation css class (default is animated)
+            offset:       0,          // distance to the element when triggering the animation (default is 0)
+            mobile:       true,       // trigger animations on mobile devices (default is true)
+            live:         true,       // act on asynchronously loaded content (default is true)
+            callback:     function(box) {
+              // the callback is fired every time an animation is started
+              // the argument that is passed in is the DOM node being animated
+            },
+            scrollContainer: null // optional scroll container selector, otherwise use window
+          }
+        );
+        wow.init();
+    </script>
+    
+@endsection

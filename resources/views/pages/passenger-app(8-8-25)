@@ -1,0 +1,210 @@
+@extends('layouts.app')
+
+@section('content')
+
+<style>
+
+
+
+</style>
+
+    <!-- Breadcrumb -->
+
+    <section class="page-header">
+        <div class="page-header-shape"></div>
+        <div class="container">
+            <div class="page-header-info">
+                <h4>GoRide Passenger App</h4>
+                <h1>Experience Convenient Rides <br> with <span>Our Passenger App!</span></h1>
+                <p>All the tools you need to book rides effortlessly and <br> enjoy a smooth travel experience!</p>
+                    <a href="signup" class="cs_btn cs_style_2 mt-4">Get start for free&nbsp;<i class="fa-regular fa-car-side-bolt"></i></a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="about-section padding">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="section-heading mb-40">
+                        <h4 class="wow fadeIn" data-wow-duration="2s"><span></span>GoRide Passenger App</h4>
+                        <h2 class="wow fadeIn" data-wow-duration="2s">Effortless Rides, Anytime, Anywhere</h2>
+                        <p class="wow fadeIn" data-wow-duration="2s">Welcome to the GoRide Passenger App, designed to provide a seamless and enjoyable experience for riders. Whether you're commuting to work, heading to the airport, or exploring a new city, GoRide ensures a smooth journey with just a few taps. With our AI-powered dispatch system, finding a ride has never been easier or faster.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="section-heading text-center mb-40">
+                        <h2 class="wow fadeIn" data-wow-duration="2s">Why Choose the GoRide Passenger App?</h2>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s">
+                    <div class="key_features_card">
+                        <h4>Quick and Easy Bookings</h4>
+                        <p>Request a ride in seconds! Enter your destination, choose your ride type, and let our AI-based system match you with the nearest available driver.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+                    <div class="key_features_card">
+                        <h4>Real-Time Tracking</h4>
+                        <p>Stay updated on your ride’s progress. Track your driver in real-time, view their estimated time of arrival, and receive instant notifications about your ride status.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>AI-Optimized Dispatching</h4>
+                        <p>Our intelligent dispatch software utilizes advanced algorithms to ensure that the closest driver is assigned to you, minimizing wait times and enhancing efficiency.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s">
+                    <div class="key_features_card">
+                        <h4>Multiple Payment Options</h4>
+                        <p>Pay your way! Choose from a variety of payment methods, including credit/debit cards, mobile wallets, or cash. Secure, convenient, and flexible.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+                    <div class="key_features_card">
+                        <h4>Ride History and Receipts</h4>
+                        <p>Keep track of all your rides in one place. Access past trip details and receipts directly from the app for easy reference and expense management.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>Safety First</h4>
+                        <p>Your safety is our priority. Share your trip details with family and friends, view driver profiles and ratings, and access 24/7 support for any assistance.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>Fare Estimates</h4>
+                        <p>Know your fare before you ride. Get an upfront fare estimate based on your destination and ride type, so you can travel with peace of mind.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex my-1 wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+                    <div class="key_features_card">
+                        <h4>Scheduled Rides</h4>
+                        <p>Plan your rides in advance with our scheduling feature. Set your pickup time and location, and we’ll ensure a driver is ready when you are.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="how-app-work-section" id="how-it-works">
+    	<div class="container">
+    		<div class="row">
+    			<div class="col-md-6">
+    				<div class="how-app-work-content-wrap">
+    					<div class="title wow fadeIn" data-wow-duration="2s">
+    						<h3>Get Started with GoRide Passenger App</h3>
+    					</div>
+    					<div class="how-app-work-content" id="how-app-work-slider-pager">
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-download"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Download the GoRide Passenger App</h4>
+        								<p>Available on iOS and Android, our app is designed to be intuitive and easy to use.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1000ms">
+    						    <div class="single-how-app-work">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-user-plus"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Sign Up and Set Up Your Profile</h4>
+        								<p>Create an account, add your payment details, and you’re ready to go!</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-taxi"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Request Your Ride</h4>
+        								<p>Open the app, enter your destination, and choose your ride type.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-map-marker-alt"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Track Your Driver</h4>
+        								<p>Get real-time updates on your driver’s location and estimated time of arrival.</p>
+        							</div>
+        						</div>
+    						</a>
+    						<a href="#" class="pager-item active wow fadeIn" data-wow-duration="2s" data-wow-delay="1500ms">
+    						    <div class="single-how-app-work ">
+        							<div class="icon-box">
+        								<div class="inner">
+        									<i class="fas fa-smile"></i>
+        								</div>
+        							</div>
+        							<div class="text-box">
+        								<h4>Enjoy Your Ride</h4>
+        								<p>Sit back, relax, and enjoy the journey. Rate your driver and leave feedback to help us improve.</p>
+        							</div>
+        						</div>
+    						</a>
+    					</div>
+    					<!-- Links -->
+    					<a href="https://apps.apple.com/in/app/my-passenger/id6744351099" target="_blank" class="download-btn wow fadeIn" data-wow-duration="2s">
+    						<i class="fab fa-apple"></i>
+    						<span class="inner"> <span class="avail">Available on</span> <span class="store-name">App Store</span></span>
+    					</a>
+    					<a href="https://play.google.com/store/apps/details?id=com.shi.myPassenger" target="_blank" class="download-btn wow fadeIn" data-wow-duration="2s" data-wow-delay="500ms">
+    						<i class="fab fa-google-play"></i>
+    						<span class="inner"><span class="avail">Available on</span> <span class="store-name">Google play</span></span>
+    					</a>
+    				</div>
+    			</div>
+    			<div class="col-md-6 how-app-work-slider-content d-flex align-items-center wow fadeIn" data-wow-duration="2s">
+    			    <img src="{{ asset('goride/img/passenger-app-mockup.webp') }}">
+    			</div>
+    		</div>
+    	</div>
+    </section>
+    
+@endsection
+
+@section('script')
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js" integrity="sha512-Eak/29OTpb36LLo2r47IpVzPBLXnAMPAVypbSZiZ4Qkf8p/7S/XRG5xp7OKWPPYfJT6metI+IORkR5G8F900+g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        var wow = new WOW( {
+            boxClass:     'wow',      // animated element css class (default is wow)
+            animateClass: 'animated', // animation css class (default is animated)
+            offset:       0,          // distance to the element when triggering the animation (default is 0)
+            mobile:       true,       // trigger animations on mobile devices (default is true)
+            live:         true,       // act on asynchronously loaded content (default is true)
+            callback:     function(box) {
+              // the callback is fired every time an animation is started
+              // the argument that is passed in is the DOM node being animated
+            },
+            scrollContainer: null // optional scroll container selector, otherwise use window
+          }
+        );
+        wow.init();
+    </script>
+    
+@endsection

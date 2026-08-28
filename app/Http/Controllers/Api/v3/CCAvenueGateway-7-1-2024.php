@@ -1,0 +1,1935 @@
+<?php
+
+namespace App\Http\Controllers\Api\v3;
+
+use App\Http\Controllers\Controller;
+// use App\Http\Controllers\drawsController;
+use Carbon\Carbon;
+
+use DB;
+use Exception;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Api\v3\onlineTicket;
+use Illuminate\Support\Facades\Http;
+use Razorpay\Api\Api;
+
+class CCAvenueGateway extends Controller
+{
+
+  protected $razorPayAmt;
+  // protected $yearlyCycle;
+
+  // Constructor to initialize the property
+  public function __construct()
+  {
+    // $this->monthlyCycle = 36;
+    $this->razorPayAmt = 100;
+  }
+
+
+  public function CCencrypt($plainText, $key)
+  {
+    $key = $this->hextobin(md5($key));
+    $initVector = pack("C*", 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f);
+    $openMode = openssl_encrypt($plainText, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $initVector);
+    $encryptedText = bin2hex($openMode);
+    return $encryptedText;
+  }
+  public function CCdecrypt($encryptedText, $key)
+  {
+    $key = $this->hextobin(md5($key));
+    $initVector = pack("C*", 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f);
+    $encryptedText = $this->hextobin($encryptedText);
+    $decryptedText = openssl_decrypt($encryptedText, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $initVector);
+    return $decryptedText;
+  }
+  //*********** Padding Function *********************
+  public function pkcs5_pad($plainText, $blockSize)
+  {
+    $pad = $blockSize - (strlen($plainText) % $blockSize);
+    return $plainText . str_repeat(chr($pad), $pad);
+  }
+  //********** Hexadecimal to Binary function for php 4.0 version ********
+  public function hextobin($hexString)
+  {
+    $length = strlen($hexString);
+    $binString = "";
+    $count = 0;
+    while ($count < $length) {
+      $subString = substr($hexString, $count, 2);
+      $packedString = pack("H*", $subString);
+      if ($count == 0) {
+        $binString = $packedString;
+      } else {
+        $binString .= $packedString;
+      }
+      $count += 2;
+    }
+    return $binString;
+  }
+  public function invokeApiRequest($type, $url, $headers, $post)
+  {
+    try {
+      $curl = curl_init();
+      curl_setopt_array(
+        $curl,
+        array(
+          CURLOPT_URL => $url,
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => $type,
+          CURLOPT_POSTFIELDS => $post,
+          CURLOPT_HTTPHEADER => $headers,
+        )
+      );
+      $response = curl_exec($curl);
+      curl_close($curl);
+      return json_decode($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Throw in Catch Section', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+  function run_Api($method, $url)
+  {
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => $url,
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => '',
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => $method,
+    ));
+    $response = curl_exec($curl);
+    curl_close($curl);
+    return $response;
+  }
+  // Get User Product Cart Details
+  public function ccavenueInitiate(Request $request)
+  {
+    try {
+      $response = [];
+      $input = $request->all();
+      $request->transaction_id = Controller::BlockSQLInjection($request->transaction_id);
+      if ($request->transaction_id == '' || $request->transaction_id == null || $request->transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Please use a valid transaction id!', 'error' => 'Please use a valid transaction id!'];
+        goto returnFVI;
+      }
+      $razorpay = new Api(env('RAZAPI_KEY_ID'), env('RAZAPI_KEY_SECRET'));
+      $transaction_id = $request->transaction_id;
+      // $draw = Controller::getActiveDrawData()->content();
+      // $drawData = json_decode($draw);
+      // $draw_id = $drawData->data->activeDraw->id ?? '';
+      $data = [];
+      // Get User ID
+      $user_id = auth()->user()->id;
+      if ($user_id == '' || $user_id == null || $user_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Login Required!', 'error' => 'Kindly check the access token!'];
+        goto returnFVI;
+      }
+      if ($transaction_id == '' || $transaction_id == null || $transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Transaction ID Required!', 'error' => 'Kindly check the transaction ID!'];
+        goto returnFVI;
+      }
+      // if ($draw_id == '' || $draw_id == null || $draw_id == 'null') {
+      //   $response = ['status' => 'failed', 'message' => 'The Active Draw Not Found!', 'error' => 'The Active Draw Not Found!'];
+      //   goto returnFVI;
+      // }
+      $payment_history = DB::table('payment_history')->select('transaction_id', 'id', 'finaltotal', 'checkout_response', 'grandtotal')->where('user_id', $user_id)->where('transaction_id', 'LIKE', $transaction_id)->orderBy('id', 'desc')->limit(1)->get();
+      if ($payment_history->count() < 1) {
+        $response = ['status' => 'failed', 'message' => 'The payment track is missing. Please provide the payment track information.', 'error' => 'payment track missing'];
+        goto returnFVI;
+      }
+      if ($payment_history[0]->grandtotal != 0 && $payment_history[0]->grandtotal > 0) {
+        $firstname = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->name);
+        $emailid = (auth()->user()->email != '') ? auth()->user()->email : auth()->user()->mobile . '@nationaldrawuae.com';
+        $mobile = preg_replace('/[A-Za-z\@\.,\;\""!@#$%^&*()<>:; "]+/', '', auth()->user()->mobile);
+        $address = preg_replace('/[@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->address);
+        $nationality = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->nationality);
+        $residinglocation = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->residinglocation);
+        $city = preg_replace('/[0-9@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->city);
+        $payMentIniArr = [
+          "amount" => intval($payment_history[0]->grandtotal) * $this->razorPayAmt,
+          "currency" => 'INR',
+          'receipt' => $transaction_id
+        ];
+        $createOrder = $razorpay->order->create($payMentIniArr);
+        if (isset($createOrder['id']) && isset($createOrder['amount']) && isset($createOrder['status']) && $createOrder['status'] === 'created') {
+          $createOrder = $createOrder->toArray();
+          $paymentLogIns = DB::table('payment_history_log')->insertGetId([
+            'payment_history_id' => $payment_history[0]->id,
+            'transaction_id' => $payment_history[0]->transaction_id,
+            'gateway' => 'razorpay',
+            // 'draw_id' => $payment_history[0]->draw_id,
+            'user_id' => $user_id,
+            'nenc_response' => '',
+            'reference' => $createOrder['id'],
+            'pay_response' => json_encode($createOrder),
+            'createdon' => now()
+          ]);
+          // var_dump($paymentLogIns);die;
+          if (isset($paymentLogIns) && $paymentLogIns != '' && $paymentLogIns > 0) {
+            $draw_arr = [
+              'gateway' => 'razorpay',
+              'crontime' => now(),
+              'paymentLogID' => $paymentLogIns,
+              'paymentStatus' => $createOrder['status'],
+              // 'draw_id' => $payment_history[0]->draw_id,
+            ];
+            $updateResult = DB::table('payment_history')->where('transaction_id', $transaction_id)
+              ->where('status', '0')
+              ->where('id', $payment_history[0]->id)
+              ->update($draw_arr);
+            // Log
+            $log = Controller::error_log_new($request->ip(), 'ccavenue_redirect', $user_id, '', '', 'The Data encrepted Data', json_encode($draw_arr), __DIR__, basename(__FILE__), __LINE__);
+            if ($updateResult) {
+              // $data['encRequest'] = $encrypted_data;
+              // $data['action_url'] = env('ccaction_url') . 'command=initiateTransaction';
+              // $data['access_code'] = env('accessCode');
+              $data["transactionID"] = $transaction_id;
+              $data["razaorKey"] = env('RAZAPI_KEY_ID');
+              $data["customerDetails"] = auth()->user();
+              $data["cartDetails"] = json_decode($payment_history[0]->checkout_response, true);
+              $data["orderDetails"] = $createOrder;
+              $response = ['status' => 'success', 'message' => 'Razorpay payment initiated successfully', 'data' => $data];
+              goto returnFVI;
+            } else {
+              $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The update process failed due to a database error.'];
+              goto returnFVI;
+            }
+          } else {
+            $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The insert process failed due to a database error.'];
+            goto returnFVI;
+          }
+        } else {
+          $response = ['status' => 'failed', 'message' => 'Payment Gateway not Responding!', 'error' => 'Link generation process failed!'];
+          goto returnFVI;
+        }
+      } else {
+        $response = [
+          'status' => 'failed',
+          'message' => 'Please kindly contact the support.',
+          'error' => 'Please kindly contact the support.'
+        ];
+        goto returnFVI;
+      }
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Process Failed', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+  public function ccavenueSuccess(Request $request)
+  {
+    try {
+      $response = [];
+      $input = $request->all();
+      $successRes = $request->successRes;
+      $razorpay = new Api(env('RAZAPI_KEY_ID'), env('RAZAPI_KEY_SECRET'));
+      // $request->encResponse = Controller::BlockSQLInjection($request->encResponse);
+      if ($successRes == '' || $successRes == null || $successRes == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Order Response Required!', 'error' => 'Order Response Required!'];
+        goto returnFVI;
+      }
+      // $encResponse = $request->encResponse;
+      // $draw = Controller::getActiveDrawData()->content();
+      // $drawData = json_decode($draw);
+      // $draw_id = $drawData->data->activeDraw->id ?? '';
+      $data = [];
+      // Get User ID
+      $user_id = auth()->user()->id;
+      if ($user_id == '' || $user_id == null || $user_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Login Required!', 'error' => 'Kindly check the access token!'];
+        goto returnFVI;
+      }
+      // if ($encResponse == '' || $encResponse == null || $encResponse == 'null') {
+      //   $response = ['status' => 'failed', 'message' => 'Order Response Required!', 'error' => 'Kindly check the Order Response!'];
+      //   goto returnFVI;
+      // }
+      // if ($draw_id == '' || $draw_id == null || $draw_id == 'null') {
+      //   $response = ['status' => 'failed', 'message' => 'The Active Draw Not Found!', 'error' => 'The Active Draw Not Found!'];
+      //   goto returnFVI;
+      // }
+      // Fetch order details from Razorpay
+      $fetchOrder = $razorpay->order->fetch($successRes['razorpay_order_id']);
+      if (isset($fetchOrder['id']) && isset($fetchOrder['amount']) && isset($fetchOrder['status']) && $fetchOrder['status'] === 'paid') {
+        $fetchOrder = $fetchOrder->toArray();
+        // if ($encResponse != '') {
+        // $rcvdString = $this->CCdecrypt($encResponse, env('workingKey'));
+        $order_status = $fetchOrder['status'];
+        // parse_str($rcvdString, $res);
+        // if (count($res) > 0) {
+        $tran_id = $fetchOrder['receipt'];
+        $data['order_id'] = $tran_id;
+        // dd($fetchOrder);
+        $payment_history = DB::table('payment_history')->select('transaction_id', 'id', 'finaltotal', 'paymentLogID', 'grandtotal')->where('user_id', $user_id)->where('transaction_id', 'LIKE', $tran_id)->orderBy('id', 'desc')->limit(1)->get();
+        if ($payment_history->count() > 0) {
+          // $order_status = $res['order_status'];
+          // $merchant_param1 = (int) $res['merchant_param1'];
+          // if ($user_id === $merchant_param1) {
+          $drawArr = [
+            "paymentStatus" => $order_status
+          ];
+          // $drawArr['crontime'] = now();
+          $updateResult = DB::table('payment_history')->where('transaction_id', $tran_id)
+            ->where('status', '0')
+            ->where('id', $payment_history[0]->id)
+            ->update([
+              "paymentStatus" => $order_status,
+              "crontime" => now(),
+              // "draw_id" => $draw_id
+            ]);
+          $drawArr["response"] = json_encode($fetchOrder);
+          $drawArr['updatedon'] = now();
+          // $drawArr['draw_id'] = $draw_id;
+          $updateResultLog = DB::table('payment_history_log')->where('transaction_id', $tran_id)
+            ->where('id', $payment_history[0]->paymentLogID)
+            ->update($drawArr);
+          // Log
+          $log = Controller::error_log_new($request->ip(), 'CCAvenue_success', $user_id, '', '', 'Customer Enter to National Draw Site', json_encode($request), __DIR__, basename(__FILE__), __LINE__);
+          // dd($updateResult);
+          if ($updateResult && $updateResultLog) {
+            if ($order_status === "paid") {
+              // $data['allow_id'] = '';
+              // $merchant_param2 = (int) $res['merchant_param2'];
+              // if ($merchant_param2 != 0) {
+              //   $data['allow_id'] = $merchant_param2;
+              // }
+              $data['order_status'] = $order_status;
+              $onlineTicket = new onlineTicket();
+              $walletTicketReq = new Request([
+                "transaction_id" => $tran_id,
+              ]);
+              $walletTicketReq->headers->set('Origin', rtrim($request->header('Origin'), '/'));
+              $walletTicketReq->headers->set('Authorization', $request->header('Authorization'));
+              $walletTicketGenerate = $onlineTicket->onlineTicketGeneration($walletTicketReq);
+              $walletTicketData = json_decode($walletTicketGenerate->getContent(), true);
+              // dd($walletTicketData);
+              if ($walletTicketData['status'] === 'success') {
+                // $data['redirectURL'] = ($request->header('Origin') . '/') . "index.php?makepayment=success";
+                $data['paymentStatus'] = 'success';
+                $response = ['status' => 'success', 'message' => $walletTicketData['message'], 'data' => $data];
+                // Log
+                // $log = Controller::error_log_new($request->ip(), 'CCAvenue_success_Final', $user_id, '', '', 'Customer Enter to National Draw Site', json_encode($response), __DIR__, basename(__FILE__), __LINE__);
+                goto returnFVI;
+                // $response = [
+                //   'status' => 'success',
+                //   'message' => 'Adjustment with transfer completed successfully.',
+                //   'data' => $walletTicketData['data']
+                // ];
+                // goto returnFVI;
+              } else {
+                $response = [
+                  'status' => 'failed',
+                  'message' => 'The CRM ID generation process failed',
+                  'error' => 'The CRM ID generation process failed'
+                ];
+                goto returnFVI;
+              }
+            } else {
+              // divert($baseurl . 'failed/');
+              $response = ['status' => 'failed', 'message' => 'The payment process failed.', 'error' => ['redirectURL' => ($request->header('Origin') . '/') . 'failed/']];
+              goto returnFVI;
+            }
+          } else {
+            $response = ['status' => 'failed', 'message' => 'The payment process failed.', 'error' => ['redirectURL' => ($request->header('Origin') . '/') . 'failed/']];
+            goto returnFVI;
+          }
+
+        } else {
+          $response = [
+            'status' => 'failed',
+            'message' => 'The payment process failed.',
+            'error' => 'the payment process failed.'
+          ];
+          goto returnFVI;
+        }
+        // }
+      } else {
+        $response = [
+          'status' => 'failed',
+          'message' => 'The payment process failed.',
+          'error' => 'the payment process failed.'
+        ];
+        goto returnFVI;
+      }
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Throw in Catch Section', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+
+  public function paypalInitiate(Request $request)
+  {
+    try {
+      $response = [];
+      $input = $request->all();
+      $request->transaction_id = Controller::BlockSQLInjection($request->transaction_id);
+      if ($request->transaction_id == '' || $request->transaction_id == null || $request->transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Please use a valid transaction id!', 'error' => 'Please use a valid transaction id!'];
+        goto returnFVI;
+      }
+
+      $data = [];
+      // Get User ID
+      $user_id = auth()->user()->id;
+      if ($user_id == '' || $user_id == null || $user_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Login Required!', 'error' => 'Kindly check the access token!'];
+        goto returnFVI;
+      }
+
+      $transaction_id = $request->transaction_id;
+      // $draw = Controller::getActiveDrawData()->content();
+      // $drawData = json_decode($draw);
+      // $draw_id = $drawData->data->activeDraw->id ?? '';
+
+      if ($transaction_id == '' || $transaction_id == null || $transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Transaction ID Required!', 'error' => 'Kindly check the transaction ID!'];
+        goto returnFVI;
+      }
+
+      // PayPal API credentials
+      $clientId = config('paypal.client_id');  // You can set these in your .env file
+      $clientSecret = config('paypal.client_secret');
+
+
+
+
+
+
+      // $razorpay = new Api(env('RAZAPI_KEY_ID'), env('RAZAPI_KEY_SECRET'));
+
+      // if ($draw_id == '' || $draw_id == null || $draw_id == 'null') {
+      //   $response = ['status' => 'failed', 'message' => 'The Active Draw Not Found!', 'error' => 'The Active Draw Not Found!'];
+      //   goto returnFVI;
+      // }
+      $payment_history = DB::table('payment_history')->select('transaction_id', 'id', 'finaltotal', 'checkout_response', 'grandtotal')->where('user_id', $user_id)->where('transaction_id', 'LIKE', $transaction_id)->orderBy('id', 'desc')->limit(1)->get();
+      if ($payment_history->count() < 1) {
+        $response = ['status' => 'failed', 'message' => 'The payment track is missing. Please provide the payment track information.', 'error' => 'payment track missing'];
+        goto returnFVI;
+      }
+      if ($payment_history[0]->grandtotal != 0 && $payment_history[0]->grandtotal > 0) {
+        $firstname = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->name);
+        $emailid = (auth()->user()->email != '') ? auth()->user()->email : auth()->user()->mobile . '@nationaldrawuae.com';
+        $mobile = preg_replace('/[A-Za-z\@\.,\;\""!@#$%^&*()<>:; "]+/', '', auth()->user()->mobile);
+        $address = preg_replace('/[@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->address);
+        $nationality = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->nationality);
+        $residinglocation = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->residinglocation);
+        $city = preg_replace('/[0-9@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->city);
+
+
+
+
+
+
+        // Send the POST request to PayPal's API to get the access token
+        $response = Http::withHeaders([
+          'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret)
+        ])
+          ->asForm()  // Required for sending form data
+          ->post(config('paypal.base_url') . '/v1/oauth2/token', [
+            'grant_type' => 'client_credentials',
+          ]);
+
+        // Handle the response
+        if ($response->successful()) {
+          $data = $response->json();
+          $accessToken = $data['access_token'];
+
+          if (!isset($accessToken) || $accessToken == '') {
+            $response = [
+              'status' => 'failed',
+              'message' => 'Please kindly contact the support.',
+              'error' => 'Failed to get access token'
+            ];
+            goto returnFVI;
+          }
+
+
+
+
+          // Define the body (JSON data)
+          $orderData = [
+            'intent' => 'CAPTURE',
+            'purchase_units' => [
+              [
+                'reference_id' => $transaction_id,
+                'amount' => [
+                  'currency_code' => 'USD',
+                  'value' => number_format($payment_history[0]->grandtotal, 2),
+                ],
+                'description' => 'Go Ride purchase',
+                // 'invoice_id' => $transaction_id
+              ]
+            ],
+            'application_context' => [
+              'return_url' => (rtrim($request->header('Origin'), '/') . '/') . 'afterPayment',
+              'cancel_url' => (rtrim($request->header('Origin'), '/') . '/') . 'afterPayment',
+            ]
+          ];
+
+          // dd($orderData);
+
+          $createor = Http::withHeaders(
+            [
+              'Content-Type' => 'application/json',
+              'Prefer' => 'return=representation',
+              'Authorization' => 'Bearer ' . $accessToken,
+              'PayPal-Request-Id' => $transaction_id
+            ]
+
+          )
+            ->post(config('paypal.base_url') . '/v2/checkout/orders', $orderData);
+
+
+
+          // dd(env('PAYPAL_API'), $createor->successful());
+
+
+          if ($createor->successful()) {
+
+            $createOrder = $createor->json();
+
+
+
+            if (isset($createOrder['id']) && isset($createOrder['purchase_units'][0]['amount']['value']) && isset($createOrder['status']) && $createOrder['status'] === 'CREATED') {
+              // $createOrder = $createOrder;
+
+
+
+
+
+
+              $paymentLogIns = DB::table('payment_history_log')->insertGetId([
+                'payment_history_id' => $payment_history[0]->id,
+                'transaction_id' => $payment_history[0]->transaction_id,
+                'gateway' => 'paypal',
+                // 'draw_id' => $payment_history[0]->draw_id,
+                'user_id' => $user_id,
+                'nenc_response' => '',
+                'reference' => $createOrder['id'],
+                'pay_response' => json_encode($createOrder),
+                'createdon' => now()
+              ]);
+              // var_dump($paymentLogIns);die;
+              if (isset($paymentLogIns) && $paymentLogIns != '' && $paymentLogIns > 0) {
+
+
+
+
+
+
+                $draw_arr = [
+                  'gateway' => 'paypal',
+                  'crontime' => now(),
+                  'paymentLogID' => $paymentLogIns,
+                  'paymentStatus' => $createOrder['status'],
+                  // 'draw_id' => $payment_history[0]->draw_id,
+                ];
+
+
+
+                $updateResult = DB::table('payment_history')->where('transaction_id', $transaction_id)
+                  ->where('status', '0')
+                  ->where('id', $payment_history[0]->id)
+                  ->update($draw_arr);
+                // Log
+                $log = Controller::error_log_new($request->ip(), 'ccavenue_redirect', $user_id, '', '', 'The Data encrepted Data', json_encode($draw_arr), __DIR__, basename(__FILE__), __LINE__);
+                if ($updateResult) {
+
+
+                  // dd($createOrder, $createOrder['purchase_units'][0]['amount']);
+
+
+
+                  // $data['encRequest'] = $encrypted_data;
+                  // $data['action_url'] = env('ccaction_url') . 'command=initiateTransaction';
+                  // $data['access_code'] = env('accessCode');
+                  $data["transactionID"] = $transaction_id;
+                  // $data["razaorKey"] = env('RAZAPI_KEY_ID');
+                  $data["customerDetails"] = auth()->user();
+                  $data["cartDetails"] = json_decode($payment_history[0]->checkout_response, true);
+                  $data["orderDetails"] = $createOrder;
+                  $data['redirectPay'] = $createOrder['links'][1]['href'];
+
+
+
+                  $response = ['status' => 'success', 'message' => 'Razorpay payment initiated successfully', 'data' => $data];
+                  goto returnFVI;
+                } else {
+                  $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The update process failed due to a database error.'];
+                  goto returnFVI;
+                }
+              } else {
+                $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The insert process failed due to a database error.'];
+                goto returnFVI;
+              }
+            } else {
+              $response = ['status' => 'failed', 'message' => 'Payment Gateway not Responding!', 'error' => 'Link generation process failed!'];
+              goto returnFVI;
+            }
+          } else {
+            $response = ['status' => 'failed', 'message' => 'Payment Gateway not Responding!', 'error' => 'Link generation process failed!'];
+            goto returnFVI;
+          }
+        } else {
+          $response = [
+            'status' => 'failed',
+            'message' => 'Please kindly contact the support.',
+            'error' => 'Failed to get access token'
+          ];
+          goto returnFVI;
+        }
+      } else {
+        $response = [
+          'status' => 'failed',
+          'message' => 'Please kindly contact the support.',
+          'error' => 'Please kindly contact the support.'
+        ];
+        goto returnFVI;
+      }
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Process Failed', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+  public function paypalSuccess(Request $request)
+  {
+    try {
+      $response = [];
+      $input = $request->all();
+      $successRes = $request->successRes;
+      // $payerId = $request->PayerID;
+      $token = $request->token;
+
+      // PayPal API credentials
+      $clientId = config('paypal.client_id');  // You can set these in your .env file
+      $clientSecret = config('paypal.client_secret');
+
+      // $razorpay = new Api(env('RAZAPI_KEY_ID'), env('RAZAPI_KEY_SECRET'));
+
+      if ($token == '' || $token == null || $token == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Order Response Required!', 'error' => 'Order Response Required!'];
+        goto returnFVI;
+      }
+
+
+
+      $data = [];
+      // Get User ID
+      $user_id = auth()->user()->id;
+      if ($user_id == '' || $user_id == null || $user_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Login Required!', 'error' => 'Kindly check the access token!'];
+        goto returnFVI;
+      }
+
+
+
+
+      // Send the POST request to PayPal's API to get the access token
+      $response = Http::withHeaders([
+        'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+        'Content-Type' => 'application/x-www-form-urlencoded'
+      ])
+        ->asForm()
+        ->post(config('paypal.base_url') . '/v1/oauth2/token', [
+          'grant_type' => 'client_credentials',
+          'ignoreCache' => 'true',
+          'return_authn_schemes' => 'true',
+          'return_client_metadata' => 'true',
+          'return_unconsented_scopes' => 'true',
+        ]);
+
+
+
+      // Handle the response
+      if ($response->successful()) {
+        $data = $response->json();
+        $accessToken = $data['access_token'];
+
+        if (!isset($accessToken) || $accessToken == '') {
+          $response = [
+            'status' => 'failed',
+            'message' => 'Please kindly contact the support.',
+            'error' => 'Failed to get access token'
+          ];
+          goto returnFVI;
+        }
+
+
+        // $getPaymentData = Http::withHeaders([
+        //   'Authorization' => 'Bearer ' . $accessToken,
+        //   'Content-Type'  => 'application/json',
+        // ])
+        //   ->get(env('PAYPAL_API') . 'v2/checkout/orders/' . $token );
+
+
+        $getPaymentData = Http::withHeaders([
+          'Authorization' => 'Bearer ' . $accessToken,
+          // 'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+          'Content-Type' => 'application/json',
+          // 'Prefer' => 'return=representation'
+        ])->post(config('paypal.base_url') . '/v2/checkout/orders/' . $token . '/capture', null);
+
+
+
+        // dd($getPaymentData->json(), $getPaymentData->successful(), $getPaymentData);
+
+        if ($getPaymentData->successful()) {
+
+          $fetchOrder = $getPaymentData->json();
+
+
+
+
+          // dd($fetchOrder);
+
+          if (isset($fetchOrder['id']) && isset($fetchOrder['status']) && $fetchOrder['status'] === 'COMPLETED') {
+            // $fetchOrder = $fetchOrder->toArray();
+
+            $order_status = $fetchOrder['status'];
+
+            $tran_id = $fetchOrder['purchase_units'][0]['reference_id'];
+            $data['order_id'] = $tran_id;
+            // dd($fetchOrder);
+            $payment_history = DB::table('payment_history')->select('transaction_id', 'id', 'finaltotal', 'paymentLogID', 'grandtotal')->where('user_id', $user_id)->where('transaction_id', 'LIKE', $tran_id)->orderBy('id', 'desc')->limit(1)->get();
+            if ($payment_history->count() > 0) {
+              // $order_status = $res['order_status'];
+              // $merchant_param1 = (int) $res['merchant_param1'];
+              // if ($user_id === $merchant_param1) {
+              $drawArr = [
+                "paymentStatus" => $order_status
+              ];
+              // $drawArr['crontime'] = now();
+              $updateResult = DB::table('payment_history')->where('transaction_id', $tran_id)
+                ->where('status', '0')
+                ->where('id', $payment_history[0]->id)
+                ->update([
+                  "paymentStatus" => $order_status,
+                  "crontime" => now(),
+                  // "draw_id" => $draw_id
+                ]);
+              $drawArr["response"] = json_encode($fetchOrder);
+              $drawArr['updatedon'] = now();
+              // $drawArr['draw_id'] = $draw_id;
+              $updateResultLog = DB::table('payment_history_log')->where('transaction_id', $tran_id)
+                ->where('id', $payment_history[0]->paymentLogID)
+                ->update($drawArr);
+              // Log
+              $log = Controller::error_log_new($request->ip(), 'CCAvenue_success', $user_id, '', '', 'Customer Enter to National Draw Site', json_encode($request), __DIR__, basename(__FILE__), __LINE__);
+              // dd($updateResult);
+              if ($updateResult && $updateResultLog) {
+                if ($order_status === "COMPLETED") {
+                  // $data['allow_id'] = '';
+                  // $merchant_param2 = (int) $res['merchant_param2'];
+                  // if ($merchant_param2 != 0) {
+                  //   $data['allow_id'] = $merchant_param2;
+                  // }
+                  $data['order_status'] = $order_status;
+                  $onlineTicket = new onlineTicket();
+                  $walletTicketReq = new Request([
+                    "transaction_id" => $tran_id,
+                  ]);
+                  $walletTicketReq->headers->set('Origin', rtrim($request->header('Origin'), '/'));
+                  $walletTicketReq->headers->set('Authorization', $request->header('Authorization'));
+                  $walletTicketGenerate = $onlineTicket->onlineTicketGeneration($walletTicketReq);
+                  $walletTicketData = json_decode($walletTicketGenerate->getContent(), true);
+                  // dd($walletTicketData);
+                  if ($walletTicketData['status'] === 'success') {
+                    // $data['redirectURL'] = ($request->header('Origin') . '/') . "index.php?makepayment=success";
+                    $data['paymentStatus'] = 'success';
+                    $response = ['status' => 'success', 'message' => $walletTicketData['message'], 'data' => $data];
+
+                    goto returnFVI;
+                  } else {
+                    $response = [
+                      'status' => 'failed',
+                      'message' => 'The CRM ID generation process failed',
+                      'error' => 'The CRM ID generation process failed'
+                    ];
+                    goto returnFVI;
+                  }
+                } else {
+                  // divert($baseurl . 'failed/');
+                  $response = ['status' => 'failed', 'message' => 'The payment process failed.', 'error' => ['redirectURL' => ($request->header('Origin') . '/') . 'failed/']];
+                  goto returnFVI;
+                }
+              } else {
+                $response = ['status' => 'failed', 'message' => 'The payment process failed.', 'error' => ['redirectURL' => ($request->header('Origin') . '/') . 'failed/']];
+                goto returnFVI;
+              }
+
+            } else {
+              $response = [
+                'status' => 'failed',
+                'message' => 'The payment process failed.',
+                'error' => 'the payment process failed.'
+              ];
+              goto returnFVI;
+            }
+            // }
+          } else {
+            $response = [
+              'status' => 'failed',
+              'message' => 'The payment process failed.',
+              'error' => 'the payment process failed.'
+            ];
+            goto returnFVI;
+          }
+        } else {
+          // Handle failure
+          // return back()->with('error', 'Payment could not be processed. Please try again.');
+          $response = [
+            'status' => 'failed',
+            'message' => 'Payment could not be processed. Please try again.',
+            'error' => 'Payment could not be processed. Please try again.'
+          ];
+          goto returnFVI;
+        }
+      } else {
+        $response = [
+          'status' => 'failed',
+          'message' => 'Please kindly contact the support.',
+          'error' => 'Failed to get access token'
+        ];
+        goto returnFVI;
+      }
+
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Throw in Catch Section', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+
+
+
+  public function getPlanDetails($razorpay, $cart)
+  {
+    try {
+
+
+      getFetchPlan:
+      $fetchAllPlan = $razorpay->plan->all();
+      $fetchAllPlan = $fetchAllPlan->toArray();
+      $filteredPlans = [];
+
+
+      if (isset($fetchAllPlan) && count($fetchAllPlan['items']) > 0 && $fetchAllPlan['count'] > 0) {
+
+
+
+        $filteredPlans = collect($fetchAllPlan['items'])->filter(function ($plan) use ($cart) {
+          $notesId = collect($plan['notes'])->get('id');
+
+          // dd($plan['item']['amount']);
+
+          return isset($notesId)
+            && intval($notesId) === intval($cart['productDetails']['id'])
+            && (intval($cart['productDetails']['price']) * $this->razorPayAmt) === intval($plan['item']['amount'])
+            && strtoupper(trim($plan['period'])) === strtoupper(trim($cart['planType']))
+            && strtoupper(trim($plan['item']['currency'])) === strtoupper(trim($cart['productDetails']['currency']));
+        });
+
+        $firstPlan = $filteredPlans->first();
+        $filteredPlans = $firstPlanArray = $firstPlan ? $firstPlan : null;
+      }
+
+      // dd($filteredPlans);
+
+      if (empty($filteredPlans)) {
+        unset($cart['productDetails']['description']);
+
+
+        $plan = [
+          "period" => strtolower($cart['planType']),
+          "interval" => 1,
+          "item" => [
+            "name" => $cart['productDetails']['name'],
+            "amount" => intval($cart['productDetails']['price']) * $this->razorPayAmt,
+            "currency" => strtoupper($cart['productDetails']['currency']),
+            //"description" => "Description for the test plan - monthly"
+          ],
+          "notes" => $cart['productDetails']
+        ];
+
+        try {
+          $createPlan = $razorpay->plan->create($plan);
+
+
+
+          if ($createPlan) {
+            goto getFetchPlan;
+          }
+        } catch (\Razorpay\Api\Errors\BadRequestError $e) {
+          // Handle error if plan creation fails
+          // return ['error' => 'Error creating plan: ' . $e->getMessage()];
+          $response = ['status' => 'failed', 'message' => 'Throw in Catch Section', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+
+          goto returnFVI;
+        }
+      }
+
+
+      // return $filteredPlans;
+
+      $response = ['status' => 'success', 'message' => 'successfully collected the plan details', 'data' => $filteredPlans];
+
+      goto returnFVI;
+
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Throw in Catch Section', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+
+
+
+
+  public function razorpaySubInitiate(Request $request)
+  {
+    try {
+      $response = [];
+      $input = $request->all();
+      $request->transaction_id = Controller::BlockSQLInjection($request->transaction_id);
+      if ($request->transaction_id == '' || $request->transaction_id == null || $request->transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Please use a valid transaction id!', 'error' => 'Please use a valid transaction id!'];
+        goto returnFVI;
+      }
+      $razorpay = new Api(env('RAZAPI_KEY_ID'), env('RAZAPI_KEY_SECRET'));
+      $transaction_id = $request->transaction_id;
+
+      $data = [];
+      // Get User ID
+      $user_id = auth()->user()->id;
+      if ($user_id == '' || $user_id == null || $user_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Login Required!', 'error' => 'Kindly check the access token!'];
+        goto returnFVI;
+      }
+      if ($transaction_id == '' || $transaction_id == null || $transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Transaction ID Required!', 'error' => 'Kindly check the transaction ID!'];
+        goto returnFVI;
+      }
+
+      $payment_history = DB::table('subscriptions')->select('subscription_id', 'id', 'finaltotal', 'checkout_response', 'grandtotal')->where('user_id', $user_id)->where('subscription_id', 'LIKE', $transaction_id)->whereNull('subID')->orderBy('id', 'desc')->limit(1)->get();
+      if ($payment_history->count() < 1) {
+        $response = ['status' => 'failed', 'message' => 'The payment track is missing. Please provide the payment track information.', 'error' => 'payment track missing'];
+        goto returnFVI;
+      }
+
+
+      if ($payment_history[0]->grandtotal != 0 && $payment_history[0]->grandtotal > 0) {
+
+        $firstname = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->name);
+        $emailid = (auth()->user()->email != '') ? auth()->user()->email : auth()->user()->mobile . '@nationaldrawuae.com';
+        $mobile = preg_replace('/[A-Za-z\@\.,\;\""!@#$%^&*()<>:; "]+/', '', auth()->user()->mobile);
+        $address = preg_replace('/[@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->address);
+        $nationality = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->nationality);
+        $residinglocation = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->residinglocation);
+        $city = preg_replace('/[0-9@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->city);
+        $cart = json_decode($payment_history[0]->checkout_response, true);
+
+
+        $getPlanData = json_decode($this->getPlanDetails($razorpay, $cart)->content(), true);
+        if ($getPlanData['status'] == 'failed') {
+          $response = ['status' => 'failed', 'message' => 'The plan creation process failed.', 'error' => ($getPlanData['error']['message'] ?? '')];
+          goto returnFVI;
+        }
+
+        $planDetails = $getPlanData['data'];
+
+
+        if ($planDetails['id'] == '' || $planDetails['id'] == null) {
+
+          $response = ['status' => 'failed', 'message' => 'The plan creation process failed.', 'error' => ($getPlanData['error']['message'] ?? '')];
+          goto returnFVI;
+        }
+
+        $cartNote = [
+          'subscription_id' => $payment_history[0]->subscription_id,
+          'id' => $payment_history[0]->id,
+          'name' => $firstname,
+          'email' => $emailid,
+          'mobile' => $mobile,
+          'dialCode' => auth()->user()->dialCode,
+          'userID' => auth()->user()->id
+        ];
+
+
+
+
+        // dd($cart, $cartNote);
+        $payMentIniArr = [
+          "plan_id" => $planDetails['id'],
+          "total_count" => $cart['subscriptionDetails']['total_count'],
+          'customer_notify' => 1,
+          'notes' => $cartNote
+        ];
+
+
+        $createOrder = $razorpay->subscription->create($payMentIniArr);
+
+        // dd($createOrder);
+
+        if (isset($createOrder['id']) && isset($createOrder['status']) && $createOrder['status'] === 'created') {
+
+
+          $createOrder = $createOrder->toArray();
+          $paymentLogIns = DB::table('subscriptions_log')->insertGetId([
+            'subscriptions_id' => $payment_history[0]->id,
+            'transaction_id' => $payment_history[0]->subscription_id,
+            'gateway' => 'razorpay',
+            // 'draw_id' => $payment_history[0]->draw_id,
+            'user_id' => $user_id,
+            'nenc_response' => '',
+            'reference' => $createOrder['id'],
+            'pay_response' => json_encode($createOrder),
+            'createdon' => now()
+          ]);
+
+
+
+          // var_dump($paymentLogIns);die;
+          if (isset($paymentLogIns) && $paymentLogIns != '' && $paymentLogIns > 0) {
+            $draw_arr = [
+              'gateway' => 'razorpay',
+              'crontime' => now(),
+              'subslogID' => $paymentLogIns,
+              'paymentStatus' => $createOrder['status'],
+              'plan_id' => $createOrder['plan_id'],
+              'subReq' => json_encode($payMentIniArr),
+              'subRes' => json_encode($createOrder),
+              'cycles_paid' => $createOrder['paid_count'],
+              'subID' => $createOrder['id'],
+              'total_cycles' => $createOrder['total_count'],
+              'sub_status' => $createOrder['status'],
+              // 'product_id' => 
+
+              // 'draw_id' => $payment_history[0]->draw_id,
+            ];
+            $updateResult = DB::table('subscriptions')->where('subscription_id', $transaction_id)
+              ->where('status', '0')
+              ->where('id', $payment_history[0]->id)
+              ->update($draw_arr);
+            // Log
+            $log = Controller::error_log_new($request->ip(), 'ccavenue_redirect', $user_id, '', '', 'The Data encrepted Data', json_encode($draw_arr), __DIR__, basename(__FILE__), __LINE__);
+            if ($updateResult) {
+              // $data['encRequest'] = $encrypted_data;
+              // $data['action_url'] = env('ccaction_url') . 'command=initiateTransaction';
+              // $data['access_code'] = env('accessCode');
+              $data["transactionID"] = $transaction_id;
+              // $data["razaorKey"] = env('RAZAPI_KEY_ID');
+              $data["customerDetails"] = auth()->user();
+              $data["cartDetails"] = json_decode($payment_history[0]->checkout_response, true);
+              $data["orderDetails"] = $createOrder;
+
+
+
+              $response = ['status' => 'success', 'message' => 'Razorpay payment initiated successfully', 'data' => $data];
+              goto returnFVI;
+            } else {
+              $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The update process failed due to a database error.'];
+              goto returnFVI;
+            }
+          } else {
+            $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The insert process failed due to a database error.'];
+            goto returnFVI;
+          }
+        } else {
+          $response = ['status' => 'failed', 'message' => 'Payment Gateway not Responding!', 'error' => 'Link generation process failed!'];
+          goto returnFVI;
+        }
+      } else {
+        $response = [
+          'status' => 'failed',
+          'message' => 'Please kindly contact the support.',
+          'error' => 'Please kindly contact the support.'
+        ];
+        goto returnFVI;
+      }
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Process Failed', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+
+
+
+
+
+
+  public function getProDuctPay($accessToken, $cart)
+  {
+    try {
+
+      $proDuctID = $cart['productDetails']['id'] . strtolower($cart['productDetails']['name']) . strtolower($cart['planType']) . strtolower($cart['currency']);
+
+      getFetchPlan:
+      $filteredPlans = [];
+      $getPaymentData = Http::withHeaders([
+        'Authorization' => 'Bearer ' . $accessToken,
+
+        'Content-Type' => 'application/json',
+
+      ])->get(config('paypal.base_url') . '/v1/catalogs/products/' . $proDuctID, null);
+
+      if ($getPaymentData->successful()) {
+        $filteredPlans = $getPaymentData->json();
+      }
+
+      if (empty($filteredPlans)) {
+        $productArr = [
+          "name" => $cart['productDetails']['name'],
+          "type" => "DIGITAL",
+          "id" => $proDuctID,
+          // "description" => "Subscription for goride",
+          // "category" => "GoRide"
+        ];
+
+
+        $createProd = Http::withHeaders([
+          'Authorization' => 'Bearer ' . $accessToken,
+
+          'Content-Type' => 'application/json',
+
+        ])->post(config('paypal.base_url') . '/v1/catalogs/products', $productArr);
+
+        if ($createProd->successful()) {
+          $fetchOrder = $createProd->json();
+          goto getFetchPlan;
+
+        } else {
+          $response = ['status' => 'failed', 'message' => 'The Product creation failed!', 'error' => []];
+          goto returnFVI;
+        }
+
+
+      }
+
+      $response = ['status' => 'success', 'message' => 'successfully collected the plan details', 'data' => $filteredPlans];
+
+      goto returnFVI;
+
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Throw in Catch Section', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+
+
+
+  public function getPlanDetailsPay($accessToken, $proDuctID, $cart)
+  {
+    try {
+      getFetchPlan:
+      $filteredPlans = [];
+      $getPaymentData = Http::withHeaders([
+        'Authorization' => 'Bearer ' . $accessToken,
+        // 'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+        'Content-Type' => 'application/json',
+        // 'Prefer' => 'return=representation'
+      ])->get(config('paypal.base_url') . '/v1/billing/plans', null);
+
+
+      if ($getPaymentData->successful()) {
+        $filteredPlans = $getPaymentData->json();
+
+        $filteredPlans = collect($filteredPlans['plans'])->filter(function ($plan) use ($cart, $proDuctID) {
+
+          return isset($plan['product_id']) && $plan['product_id'] === $proDuctID && $plan['status'] === 'ACTIVE';
+        });
+
+        $firstPlan = $filteredPlans->first();
+        $filteredPlans = $firstPlan ? $firstPlan : null;
+      }
+
+
+
+
+
+
+      if (empty($filteredPlans)) {
+        $productArr = [
+          "product_id" => $proDuctID,
+          "name" => $cart['productDetails']['name'],
+          // "description" => "12-month subscription with a price of 19 USD",
+          "status" => "ACTIVE",
+          "billing_cycles" => [
+            [
+              "frequency" => [
+                "interval_unit" => $cart['planType'] === 'MONTHLY' ? "MONTH" : "YEAR",
+                "interval_count" => 1
+              ],
+              "tenure_type" => "REGULAR",
+              "sequence" => 1,
+              "total_cycles" => $cart['subscriptionDetails']['total_count'],
+              "pricing_scheme" => [
+                "fixed_price" => [
+                  "value" => intval($cart['productDetails']['price']),
+                  "currency_code" => strtoupper($cart['productDetails']['currency'])
+                ]
+              ]
+            ]
+          ],
+          "payment_preferences" => [
+            "auto_bill_outstanding" => true,
+            "setup_fee" => [
+              "value" => "0",
+              "currency_code" => strtoupper($cart['productDetails']['currency'])
+            ],
+            "setup_fee_failure_action" => "CONTINUE",
+            "payment_failure_threshold" => 3
+          ],
+          "taxes" => [
+            "percentage" => "0",
+            "inclusive" => false
+          ]
+        ];
+
+
+        $createProd = Http::withHeaders([
+          'Authorization' => 'Bearer ' . $accessToken,
+          // 'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+          'Content-Type' => 'application/json',
+          // 'Prefer' => 'return=representation'
+        ])->post(config('paypal.base_url') . '/v1/billing/plans', $productArr);
+
+        // dd($createProd->body());
+
+        if ($createProd->successful()) {
+
+          $fetchOrder = $createProd->json();
+
+          // dd($fetchOrder);
+          goto getFetchPlan;
+
+        } else {
+          $response = ['status' => 'failed', 'message' => 'The Product creation failed!', 'error' => []];
+          goto returnFVI;
+        }
+
+
+      }
+
+      $response = ['status' => 'success', 'message' => 'successfully collected the plan details', 'data' => $filteredPlans];
+
+      goto returnFVI;
+
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Throw in Catch Section', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+
+  }
+
+
+
+
+  public function paypalSubInitiate(Request $request)
+  {
+    try {
+      $response = [];
+      $input = $request->all();
+      $request->transaction_id = Controller::BlockSQLInjection($request->transaction_id);
+      if ($request->transaction_id == '' || $request->transaction_id == null || $request->transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Please use a valid transaction id!', 'error' => 'Please use a valid transaction id!'];
+        goto returnFVI;
+      }
+
+
+      // PayPal API credentials
+      $clientId = config('paypal.client_id');
+      $clientSecret = config('paypal.client_secret');
+
+
+      $transaction_id = $request->transaction_id;
+
+      $data = [];
+      // Get User ID
+      $user_id = auth()->user()->id;
+      if ($user_id == '' || $user_id == null || $user_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Login Required!', 'error' => 'Kindly check the access token!'];
+        goto returnFVI;
+      }
+      if ($transaction_id == '' || $transaction_id == null || $transaction_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Transaction ID Required!', 'error' => 'Kindly check the transaction ID!'];
+        goto returnFVI;
+      }
+
+      $payment_history = DB::table('subscriptions')->select('subscription_id', 'id', 'finaltotal', 'checkout_response', 'grandtotal')->where('user_id', $user_id)->where('subscription_id', 'LIKE', $transaction_id)->whereNull('subID')->orderBy('id', 'desc')->limit(1)->get();
+
+
+      if ($payment_history->count() < 1) {
+        $response = ['status' => 'failed', 'message' => 'The payment track is missing. Please provide the payment track information.', 'error' => 'payment track missing'];
+        goto returnFVI;
+      }
+
+
+
+
+      if ($payment_history[0]->grandtotal != 0 && $payment_history[0]->grandtotal > 0) {
+
+        $firstname = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->name);
+        $emailid = (auth()->user()->email != '') ? auth()->user()->email : auth()->user()->mobile . '@goride.run';
+        $mobile = preg_replace('/[A-Za-z\@\.,\;\""!@#$%^&*()<>:; "]+/', '', auth()->user()->mobile);
+        $address = preg_replace('/[@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->address);
+        $nationality = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->nationality);
+        $residinglocation = preg_replace('/[0-9\@\.,\;\""!@#$%^&*()<>:;"]+/', '', auth()->user()->residinglocation);
+        $city = preg_replace('/[0-9@.;\|""!@$%^&*<>:;"]+/', '', auth()->user()->city);
+        $cart = json_decode($payment_history[0]->checkout_response, true);
+
+
+
+
+        // Send the POST request to PayPal's API to get the access token
+        $response1 = Http::withHeaders([
+          'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+          'Content-Type' => 'application/x-www-form-urlencoded'
+        ])
+          ->asForm()
+          ->post(config('paypal.base_url') . '/v1/oauth2/token', [
+            'grant_type' => 'client_credentials',
+            'ignoreCache' => 'true',
+            'return_authn_schemes' => 'true',
+            'return_client_metadata' => 'true',
+            'return_unconsented_scopes' => 'true',
+          ]);
+
+
+
+        // Handle the response
+        if ($response1->successful()) {
+          $data1 = $response1->json();
+          $accessToken = $data1['access_token'];
+
+          if (!isset($accessToken) || $accessToken == '') {
+            $response = [
+              'status' => 'failed',
+              'message' => 'Please kindly contact the support.',
+              'error' => 'Failed to get access token'
+            ];
+            goto returnFVI;
+          }
+
+          $getProduct = json_decode($this->getProDuctPay($accessToken, $cart)->content(), true);
+
+          // dd($getProduct);
+          if ($getProduct['status'] == 'failed') {
+            $response = ['status' => 'failed', 'message' => 'The plan creation process failed.', 'error' => ($getProduct['error']['message'] ?? '')];
+            goto returnFVI;
+          }
+
+          $proDuctID = $getProduct['data']['id'] ?? '';
+          if ($proDuctID == '' || $proDuctID == null) {
+            $response = ['status' => 'failed', 'message' => 'The plan creation process failed.', 'error' => ($getProduct['error']['message'] ?? '')];
+            goto returnFVI;
+          }
+
+          $getPlanData = json_decode($this->getPlanDetailsPay($accessToken, $proDuctID, $cart)->content(), true);
+
+
+
+          if ($getPlanData['status'] == 'failed') {
+            $response = ['status' => 'failed', 'message' => 'The plan creation process failed.', 'error' => ($getPlanData['error']['message'] ?? '')];
+            goto returnFVI;
+          }
+
+          $planDetails = $getPlanData['data'];
+
+
+          if ($planDetails['id'] == '' || $planDetails['id'] == null) {
+
+            $response = ['status' => 'failed', 'message' => 'The plan creation process failed.', 'error' => ($getPlanData['error']['message'] ?? '')];
+            goto returnFVI;
+          }
+
+
+
+
+          $cartNote = [
+            'subscription_id' => $payment_history[0]->subscription_id,
+            'id' => $payment_history[0]->id,
+            'name' => $firstname,
+            'email' => $emailid,
+            'mobile' => $mobile,
+            'dialCode' => auth()->user()->dialCode,
+            'userID' => auth()->user()->id
+          ];
+
+
+
+
+          // dd($cart, $cartNote);
+
+
+
+          // $payMentIniArr = [
+          //   "plan_id" => $planDetails['id'],
+          //   "total_count" => $cart['subscriptionDetails']['total_count'],
+          //   'customer_notify' => 1,
+          //   'notes' => $cartNote
+          // ];
+          $payMentIniArr = [
+            "plan_id" => $planDetails['id'],
+            "start_time" => Carbon::tomorrow('UTC')->toIso8601String(),
+            // "shipping_amount" => [
+            //   "currency_code" => "USD",
+            //   "value" => "10.00"
+            // ],
+            "auto_renewal" => true,
+            "subscriber" => [
+              "email_address" => $emailid,
+              "phone" => [
+                "phone_type" => "MOBILE"
+                ,
+                "phone_number" => [
+                  "national_number" => $mobile
+                ]
+              ],
+              "name" => [
+                "given_name" => $firstname,
+                // "surname" => $firstname
+              ],
+              "email_address" => $emailid,
+              //   "shipping_address" => [
+              //     "name" => [
+              //       "full_name" => "John Doe"
+              //     ],
+              //     "address" => [
+              //       "address_line_1" => "2211 N First Street",
+              //       "address_line_2" => "Building 17",
+              //       "admin_area_2" => "San Jose",
+              //       "admin_area_1" => "CA",
+              //       "postal_code" => "95131",
+              //       "country_code" => "US"
+              //     ]
+              //   ]
+            ],
+            "application_context" => [
+              "brand_name" => "Go Ride",
+              "locale" => "en-US",
+              // "shipping_preference" => "SET_PROVIDED_ADDRESS",
+              "user_action" => "SUBSCRIBE_NOW",
+              "payment_method" => [
+                "payer_selected" => "PAYPAL",
+                "payee_preferred" => "IMMEDIATE_PAYMENT_REQUIRED"
+              ],
+              // "return_url" => "https://www.goride.run/return",
+              // "cancel_url" => "https://www.goride.run/cancel"
+            ]
+          ];
+
+
+          $createOrder = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $accessToken,
+            // 'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+            'Content-Type' => 'application/json',
+            // 'Prefer' => 'return=representation'
+          ])->post(config('paypal.base_url') . '/v1/billing/subscriptions', $payMentIniArr);
+
+          // dd($createProd->body());
+          // dd($createOrder->body());
+          if ($createOrder->successful()) {
+
+            $createOrder = $createOrder->json();
+
+
+            if (isset($createOrder['id']) && isset($createOrder['status']) && strtolower($createOrder['status']) === 'approval_pending') {
+
+
+              // $createOrder = $createOrder->toArray();
+              $paymentLogIns = DB::table('subscriptions_log')->insertGetId([
+                'subscriptions_id' => $payment_history[0]->id,
+                'transaction_id' => $payment_history[0]->subscription_id,
+                'gateway' => 'paypal',
+                // 'draw_id' => $payment_history[0]->draw_id,
+                'user_id' => $user_id,
+                'nenc_response' => '',
+                'reference' => $createOrder['id'],
+                'pay_response' => json_encode($createOrder),
+                'createdon' => now()
+              ]);
+
+
+
+              // var_dump($paymentLogIns);die;
+              if (isset($paymentLogIns) && $paymentLogIns != '' && $paymentLogIns > 0) {
+                $draw_arr = [
+                  'gateway' => 'paypal',
+                  'crontime' => now(),
+                  'subslogID' => $paymentLogIns,
+                  'paymentStatus' => $createOrder['status'],
+                  'plan_id' => $planDetails['id'],
+                  'subReq' => json_encode($payMentIniArr),
+                  'subRes' => json_encode($createOrder),
+                  'cycles_paid' => 0,
+                  'subID' => $createOrder['id'],
+                  'total_cycles' => $cart['subscriptionDetails']['total_count'],
+                  'sub_status' => $createOrder['status'],
+                  // 'product_id' => 
+
+                  // 'draw_id' => $payment_history[0]->draw_id,
+                ];
+                $updateResult = DB::table('subscriptions')->where('subscription_id', $transaction_id)
+                  ->where('status', '0')
+                  ->where('id', $payment_history[0]->id)
+                  ->update($draw_arr);
+                // Log
+                $log = Controller::error_log_new($request->ip(), 'ccavenue_redirect', $user_id, '', '', 'The Data encrepted Data', json_encode($draw_arr), __DIR__, basename(__FILE__), __LINE__);
+                if ($updateResult) {
+                  // $data['encRequest'] = $encrypted_data;
+                  // $data['action_url'] = env('ccaction_url') . 'command=initiateTransaction';
+                  // $data['access_code'] = env('accessCode');
+                  $data["transactionID"] = $transaction_id;
+                  // $data["razaorKey"] = env('RAZAPI_KEY_ID');
+                  $data["customerDetails"] = auth()->user();
+                  $data["cartDetails"] = json_decode($payment_history[0]->checkout_response, true);
+                  $data["orderDetails"] = $createOrder;
+
+
+
+                  $response = ['status' => 'success', 'message' => 'Razorpay payment initiated successfully', 'data' => $data];
+                  goto returnFVI;
+                } else {
+                  $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The update process failed due to a database error.'];
+                  goto returnFVI;
+                }
+              } else {
+                $response = ['status' => 'failed', 'message' => 'The process failed.', 'error' => 'The insert process failed due to a database error.'];
+                goto returnFVI;
+              }
+            } else {
+              $response = ['status' => 'failed', 'message' => 'Payment Gateway not Responding!', 'error' => 'Link generation process failed!'];
+              goto returnFVI;
+            }
+
+
+          } else {
+            $response = ['status' => 'failed', 'message' => 'Payment Gateway not Responding!', 'error' => 'Link generation process failed!'];
+            goto returnFVI;
+          }
+
+
+
+        } else {
+          $response = [
+            'status' => 'failed',
+            'message' => 'Please kindly contact the support.',
+            'error' => 'Failed to get access token'
+          ];
+          goto returnFVI;
+        }
+
+      } else {
+        $response = [
+          'status' => 'failed',
+          'message' => 'Please kindly contact the support.',
+          'error' => 'Please kindly contact the support.'
+        ];
+        goto returnFVI;
+      }
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+      $response = ['status' => 'failed', 'message' => 'Process Failed', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+  public function getPaymentData($accessToken, $subID)
+  {
+    $getPaymentData = Http::withHeaders([
+      'Authorization' => 'Bearer ' . $accessToken,
+      'Content-Type' => 'application/json',
+    ])->get(config('paypal.base_url') . '/v1/billing/subscriptions/' . $subID, null);
+
+    if ($getPaymentData->successful()) {
+      // Parse the response JSON
+      return $getPaymentData->json();
+    } else {
+      // Define the response for an unsuccessful request
+      return [
+        'status' => 'failed',
+        'message' => 'This payment gateway is not responding yet. Please try again later.',
+        'error' => 'This payment gateway is not responding yet. Please try again later.'
+      ];
+    }
+  }
+
+
+
+  public function cancelSubCRM(Request $request)
+  {
+
+    try {
+
+      $data = [];
+      $user_id = auth()->user()->id;
+      // PayPal API credentials
+      $clientId = config('paypal.client_id');
+      $clientSecret = config('paypal.client_secret');
+      $razorpay = new Api(env('RAZAPI_KEY_ID'), env('RAZAPI_KEY_SECRET'));
+
+      if ($user_id == '' || $user_id == null || $user_id == 'null') {
+        $response = ['status' => 'failed', 'message' => 'Login Required!', 'error' => 'Kindly check the access token!'];
+        goto returnFVI;
+      }
+
+      $crmID = $request->crmID;
+      // $domainPrefix = $request->domainPrefix;
+      // $userName = $request->userName;
+      // $passWord = $request->passWord;
+
+      if ($crmID == '' || $crmID == null || $crmID == 'null') {
+        $response = ['status' => 'failed', 'message' => 'CRM ID is required!', 'error' => 'CRM ID is required!'];
+        goto returnFVI;
+      }
+
+
+
+      // if ($domainPrefix == '' || $domainPrefix == null || $domainPrefix == 'null') {
+      //   $response = ['status' => 'failed', 'message' => 'Domain Prefix is required!', 'error' => 'Domain Prefix is required!'];
+      //   goto returnFVI;
+      // }
+
+
+      // if ($userName == '' || $userName == null || $userName == 'null') {
+      //   $response = ['status' => 'failed', 'message' => 'Username is required!', 'error' => 'Username is required!'];
+      //   goto returnFVI;
+      // }
+
+      // if ($passWord == '' || $passWord == null || $passWord == 'null') {
+      //   $response = ['status' => 'failed', 'message' => 'Password is required!', 'error' => 'Password is required!'];
+      //   goto returnFVI;
+      // }
+
+
+      $crmData = DB::table('crm')
+        // ->whereRaw("JSON_CONTAINS(transactionID, '\"$transaction_id\"', '$')")
+        // ->whereRaw("JSON_CONTAINS(transactionID, '{$payment_history[0]->id}', '$')")
+        ->where('id', $crmID)
+        ->where('userID', $user_id)
+        ->where('deletes', '0')
+        ->orderBy('id', 'DESC')
+        ->limit(1)
+        ->get()
+        ->map(function ($item) {
+          $item->transactionID = json_decode($item->transactionID, true);
+          $item->invoiceID = json_decode($item->invoiceID, true);
+          $item->currentPlanBenefits = json_decode($item->currentPlanBenefits, true);
+          return $item;
+        });
+
+
+
+
+      if ($crmData->count() < 1) {
+        $response = ['status' => 'failed', 'message' => 'Please provide valid crm ID!', 'error' => 'Please provide valid crm ID!'];
+        goto returnFVI;
+      }
+
+      $crmData = $crmData[0];
+
+      if ($crmData->subscription_id === null) {
+        $response = [
+          'status' => 'failed',
+          'message' => 'This subscription was not found. Please purchase a new plan.',
+          'error' => 'This subscription was not found. Please purchase a new plan.'
+        ];
+        goto returnFVI;
+      }
+
+      // $crmNameCheck = DB::table('crm')
+      //   // ->whereRaw("JSON_CONTAINS(transactionID, '\"$transaction_id\"', '$')")
+      //   // ->whereRaw("JSON_CONTAINS(transactionID, '{$payment_history[0]->id}', '$')")
+      //   // ->where('id', $crmID)
+      //   ->where('subDomainName', $domainPrefix)
+      //   // ->where('deletes', '0')
+      //   ->orderBy('id', 'DESC')
+      //   ->limit(1)
+      //   ->get()
+      //   ->map(function ($item) {
+      //     $item->transactionID = json_decode($item->transactionID, true);
+      //     $item->invoiceID = json_decode($item->invoiceID, true);
+      //     $item->currentPlanBenefits = json_decode($item->currentPlanBenefits, true);
+      //     return $item;
+      //   });
+
+      $crmNameCheck = DB::table('subscriptions')
+        ->where('id', $crmData->subscription_id)
+        ->where('crmID', $crmData->id)
+        ->where('sub_status', 'active')
+        ->orderByDesc('id')
+        ->limit(1)
+        ->get();
+
+      if ($crmNameCheck->count() < 1) {
+        // $response = ['status' => 'failed', 'message' => 'Kindly try different prefix!', 'error' => 'Kindly try different prefix!'];
+        $response = [
+          'status' => 'failed',
+          'message' => 'This subscription was not found.',
+          'error' => 'This subscription was not found!'
+        ];
+        goto returnFVI;
+      }
+
+
+      $subscriptionL = $crmNameCheck[0];
+      $subID = $subscriptionL->subID;
+      if ($subID === null) {
+        $response = [
+          'status' => 'failed',
+          'message' => 'This subscription was not found. Please purchase a new plan.',
+          'error' => 'This subscription was not found. Please purchase a new plan.'
+        ];
+        goto returnFVI;
+      }
+
+
+      if ($subscriptionL->currency === 'INR') {
+
+        /////////// RazorPay //////////////
+        // razorFetch:
+        $getSubscription = $razorpay->subscription->fetch($subID);
+
+        // dd($getSubscription);
+        if (isset($getSubscription) && isset($getSubscription->id) && $getSubscription->status != 'cancelled') {
+          $getSubscription = $razorpay->subscription->fetch($subID)->cancel([
+            "cancel_at_cycle_end" => 0
+          ]);
+        }
+
+        // dd($getSubscription);
+      } else {
+
+
+        $response1 = Http::withHeaders([
+          'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+          'Content-Type' => 'application/x-www-form-urlencoded'
+        ])
+          ->asForm()
+          ->post(config('paypal.base_url') . '/v1/oauth2/token', [
+            'grant_type' => 'client_credentials',
+            'ignoreCache' => 'true',
+            'return_authn_schemes' => 'true',
+            'return_client_metadata' => 'true',
+            'return_unconsented_scopes' => 'true',
+          ]);
+
+        if ($response1->successful()) {
+          $data1 = $response1->json();
+          $accessToken = $data1['access_token'];
+
+          if (!isset($accessToken) || $accessToken == '') {
+            $response = [
+              'status' => 'failed',
+              'message' => 'Please kindly contact the support.',
+              'error' => 'Failed to get access token'
+            ];
+            goto returnFVI;
+          }
+
+          $payMentIniArr = [
+            "reason" => 'Customer executed the cancel process'
+          ];
+
+          getStatusPay:
+          $getSubscription = $this->getPaymentData($accessToken, $subID);
+
+          if ($getSubscription['status'] === 'failed') {
+            $response = [
+              'status' => 'failed',
+              'message' => 'This payment gateway is not responding yet. Please try again later.',
+              'error' => 'This payment gateway is not responding yet. Please try again later.'
+            ];
+            goto returnFVI;
+          }
+
+
+          if (isset($getSubscription['status']) && $getSubscription['status'] != 'CANCELLED') {
+            $createOrder = Http::withHeaders([
+              'Authorization' => 'Bearer ' . $accessToken,
+              // 'Authorization' => 'Basic ' . base64_encode($clientId . ':' . $clientSecret),
+              'Content-Type' => 'application/json',
+              // 'Prefer' => 'return=representation'
+            ])->post(config('paypal.base_url') . "/v1/billing/subscriptions/$subID/cancel", $payMentIniArr);
+            goto getStatusPay;
+          }
+          // dd($getSubscription);
+        } else {
+          $response = [
+            'status' => 'failed',
+            'message' => 'This payment gateway is not responding yet. Please try again later.',
+            'error' => 'This payment gateway is not responding yet. Please try again later.'
+          ];
+          goto returnFVI;
+        }
+      }
+
+
+
+      if (($subscriptionL->gateway === 'razorpay' && isset($getSubscription) && isset($getSubscription->id) && $getSubscription->status == 'cancelled') || ($subscriptionL->gateway === 'paypal' && isset($getSubscription['status']) && $getSubscription['status'] == 'CANCELLED')) {
+
+        $statusTxt = $subscriptionL->gateway === 'razorpay' ? $getSubscription->status : $getSubscription['status'];
+
+
+        $checkout_response = json_decode(
+          $subscriptionL->checkout_response,
+          true
+        );
+
+        $startDate = $subscriptionL->start_date;
+        $paid_count = $getSubscription->paid_count ?? 0;
+        $totalDays = $checkout_response['noOfDays'] * $paid_count;
+        $expiryDate = Carbon::parse($startDate)->addDays($totalDays)->format('Y-m-d');
+
+        // dd($expiryDate);
+
+
+
+        // dd($statusTxt, $getSubscription->status);
+
+        $crmArr = [
+
+          // "subscription_id" => null,
+          "expiryDate" => $expiryDate,
+          "updatedon" => now(),
+          'sub_status' => $statusTxt,
+          // "subDomainName" => $domainPrefix,
+        ];
+
+
+
+        $crmUpdate = DB::table('crm')->where('id', $crmID)
+          ->where('userID', $user_id)->where("deletes", '0')->update($crmArr);
+        if ($crmUpdate) {
+
+
+          $paymentArr = [
+            // "status" => '1',
+            // "crmID" => $ticket->id,
+            // "draw_id" => $draw_id,
+            // "ticketReferenceID" => $ticket->referenceID,
+            // 'cycles_paid' => intval($value->total_cycles) - intval($getSubscription->remaining_count),
+            'paymentStatus' => $statusTxt,
+            'sub_status' => $statusTxt,
+            'crontime' => now(),
+            'updatedon' => now(),
+            'expiryDate' => $expiryDate,
+            'cycles_paid' => $paid_count
+            // "invoice_no" => json_encode([$invoice->id]),
+            // "invoiceIDs" => json_encode([$invoice->id]),
+          ];
+
+
+          $payUpdate = DB::table('subscriptions')
+            ->where('id', '=', $subscriptionL->id)
+            // ->where('status', '0')
+            ->update($paymentArr);
+
+
+
+          $ticketUpdateArr = [
+            // "raffleIds" => json_encode($raffleIDs),
+            // "invoiceID" => json_encode([$invoice->id]),
+            "endDate" => $expiryDate,
+            'sub_status' => $statusTxt,
+            'updatedon' => now(),
+          ];
+
+          $ticketUpdate = DB::table('invoice')->where('id', $subscriptionL->invoiceID)->where("deletes", '0')->update($ticketUpdateArr);
+
+
+
+
+
+          if ($payUpdate && $ticketUpdate) {
+
+            // dd($getSubscription);
+
+            // dd()
+            $response = ['status' => 'success', 'message' => 'The CRM subscription has been cancelled', 'data' => is_array($getSubscription) ? $getSubscription : $getSubscription->toArray()];
+            goto returnFVI;
+
+          } else {
+            $response = ['status' => 'failed', 'message' => 'The update process failed!', "error" => 'The update process failed!'];
+            goto returnFVI;
+          }
+          // dd($crmUpdate);
+
+
+
+
+
+
+
+        } else {
+          $response = ['status' => 'failed', 'message' => 'The CRM Update process failed!', 'error' => 'The CRM Update process failed!'];
+          goto returnFVI;
+        }
+
+      } else {
+        $response = [
+          'status' => 'failed',
+          'message' => 'This payment gateway is not responding yet. Please try again later.',
+          'error' => 'This payment gateway is not responding yet. Please try again later.'
+        ];
+        goto returnFVI;
+      }
+
+      returnFVI:
+      return response()->json($response);
+    } catch (Exception $e) {
+
+      $response = ['status' => 'failed', 'message' => 'Process failed', 'error' => ['message' => $e->getMessage(), 'code' => $e->getCode(), 'string' => $e->__toString()]];
+      return response()->json($response);
+    }
+  }
+
+
+
+
+
+
+}

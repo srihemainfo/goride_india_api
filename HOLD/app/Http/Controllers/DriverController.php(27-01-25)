@@ -1,0 +1,375 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\{DriverStoreRequest, DriverUpdateRequest};
+use App\Models\{Driver, DriverDocuments};
+use Illuminate\Support\Facades\{File, DB, Hash, Validator};
+use Illuminate\Validation\Rules;
+use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
+use App\Services\Driver\ExcelExportService;
+use App\Services\Permissions\PermissionHelperService;
+use Illuminate\Support\Facades\Session;
+
+class DriverController extends Controller
+{
+    private $module = 'DRIVER_MODULE';
+    private $driver;
+    private $driver_documents;
+    private $excel_export;
+    private $permission;
+
+    public function __construct()
+    {
+        $this->driver = new Driver();
+        $this->driver_documents = new DriverDocuments();
+        $this->excel_export = new ExcelExportService;
+        $this->permission = new PermissionHelperService;
+    }
+
+
+    public function index(Request $request)
+    {
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['index']);
+
+        //UI permissions array destructured
+        [
+            'CREATE' => $IS_CREATABLE,
+            'UPDATE' => $IS_UPDATABLE,
+            'DELETE' => $IS_DELETABLE
+        ] = $this->permission->ui_permissions($this->module);
+
+        if ($request->ajax()) {
+            //dd($request);
+            $data = DB::table('driver')
+                ->select('*')
+                ->orderBy('name', 'ASC');
+
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->filter(function ($query) use ($request) {
+                    $status = 'Active';
+
+                    if($request->get('user_status')){
+                        $status = $request->get('user_status') ;
+
+                        if($status === 'All'){
+                            $status = '';
+                        }
+                    }
+
+                    if ($request->has('name')) {
+                        $query->where('name', 'like', "%{$request->get('name')}%");
+                    }
+
+                    if ($request->has('email')) {
+                        $query->where('email', 'like', "%{$request->get('email')}%");
+                    }
+
+                    if($status){
+                        $query->where('status', '=', $status);
+                    }
+
+                })
+                ->addColumn('status', function ($row) use ($IS_UPDATABLE) {
+                    $Active = $row->status == "Active" ? "SELECTED" : "";
+                    $Inactive = $row->status == "Inactive" ? "SELECTED" : "";
+
+                    if ($IS_UPDATABLE) {
+                        $status = "<select class=\"form-control driver-status\" name=\"status\" id=\"status\" data-id=\"$row->id\" data-previous=\"$row->status\"> <option value=\"Active\" $Active >Active</option> <option value=\"Inactive\" $Inactive >Inactive</option> </select>";
+                    } else {
+                        $status = $row->status;
+                    }
+                    return $status;
+                })
+                ->addColumn('action', function ($row) use ($IS_UPDATABLE) {
+                    $btn = '';
+                    if ($IS_UPDATABLE) {
+                        $btn = $btn . '<a href="' . route("driver.edit", $row->id) . '" title="Edit Item" class="mb-2 mr-2 btn-sm btn-transition btn btn-outline-primary"><i class="fa fa-edit"></i></a>';
+                    }
+                    // $btn = $btn . '<a href="javascript:void(0)" data-id="' . $row->id . '" title="Delete" class="mb-2 mr-2 btn-sm btn-transition btn btn-outline-danger deleteDriver"><i class="fa fa-trash"></i></a>';
+                    $btn = $btn . '<a href="' . route("driver.show", $row->id) . '" data-id="' . $row->id . '" title="View" class="mb-2 mr-2 btn-sm btn-transition btn viewDriver" style="color: #266444; border-color:#266444;"><i class="fa fa-eye"></i></a>';
+                    $btn = $btn . '<a href="javascript:void(0)" data-id="' . $row->id . '" title="Change Password" class="mb-2 mr-2 btn-sm btn-transition btn btn-outline-info changePassword"><i class="fa fa-lock"></i></a>';
+                    $btn = $btn . '<a href="' . url('booking/list/All?driver_id=') . $row->id . '"  title="List Jobs" class="mb-2 mr-2 btn-sm btn-transition btn" style="color: #400166; border-color:#400166;"><i class="fa fa-list"></i></a>';
+                    return $btn;
+                })
+                ->rawColumns(['status', 'action'])
+                ->make(true);
+        }
+
+        return view('drivers.index', compact('IS_CREATABLE'));
+    }
+
+
+    public function create()
+    {
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['create']);
+        $isEditable = false;
+        $vehicle = DB::table('vehicle')->where('status','Active')->get();
+        $driver = DB::table('driver')->orderby('name','asc')->get();
+        return view('drivers.create', compact('isEditable','vehicle','driver'));
+    }
+    public function FirstCreate()
+    {
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['create']);
+        $isEditable = false;
+        $vehicle = DB::table('vehicle')->where('status','Active')->get();
+        $driver = DB::table('driver')->orderby('name','asc')->get();
+        return view('drivers.firstDriverCreat', compact('isEditable','vehicle','driver'));
+    }
+
+
+    public function store(DriverStoreRequest $request)
+    {       
+
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['store']);
+
+        if ($request->hasFile('upload_photo')) {
+            $ImageName = $request->driver_no . "-" . time() . "." . $request->upload_photo->extension();
+            $request->upload_photo->move(public_path('driver-upload'), $ImageName);
+        }
+
+        $validated = $request->validated();
+        $validated['password'] = Hash::make($request->password);
+        $validated['profile_image_path'] = $request->hasFile('upload_photo') ? "/driver-upload/$ImageName" : "";
+
+        if ($request->vehicle_insurance_expiry) {
+            $validated['vehicle_insurance_expiry'] = date('Y-m-d', strtotime($request->vehicle_insurance_expiry));
+        }
+
+        if ($request->vehicle_license_expiry) {
+            $validated['vehicle_license_expiry'] = date('Y-m-d', strtotime($request->vehicle_license_expiry));
+        }
+
+        if ($request->pco_license_no_expiry) {
+            $validated['pco_license_no_expiry'] = date('Y-m-d', strtotime($request->pco_license_no_expiry));
+        }
+
+        if ($request->driver_license_no_expiry) {
+            $validated['driver_license_no_expiry'] = date('Y-m-d', strtotime($request->driver_license_no_expiry));
+        }
+
+        if ($request->mot_no_expiry) {
+            $validated['mot_no_expiry'] = date('Y-m-d', strtotime($request->mot_no_expiry));
+        }
+
+        // Driver::create($validated);
+        $driver = $this->driver->createDriver($validated);
+     
+        // dd($driver->id);
+
+        if ($driver->id) {
+            return redirect()->route('driver.index')->with('success_save', 'Driver created sucessfully.');
+        } else {
+            return redirect()->route('driver.index')->with('failed_saveOrUpdate', 'Driver data not saved.');
+        }
+    }
+
+
+    public function show($id)
+    {
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['index']);
+        return view('drivers.show', ['driver' => Driver::findOrFail($id), 'show' => true]);
+    }
+
+
+    public function edit($id)
+    {
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['edit']);
+
+        $document_details = DB::table('driver_documents')
+            ->select('*')
+            ->where('driver_id', '=', $id)
+            ->get();
+        // dd($document_details);
+        $vehicle = DB::table('vehicle')->where('status','Active')->get();
+        $driver = DB::table('driver')->where('id',$id)->get();
+        // dd($vehicle);
+        return view('drivers.edit', ['driver' => $driver, 'isEditable' => true, 'driver_id' => $id, 'document_details' => $document_details, 'vehicle' => $vehicle]);
+    }
+
+
+    public function update(DriverUpdateRequest $request, $id)
+    {
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['update']);
+
+        if ($request->hasFile('upload_photo')) {
+            $existing_file = public_path($request->ExistingImagePath);
+
+            if (File::exists($existing_file)) {
+                File::delete($existing_file);
+            }
+
+            $ImageName = $request->driver_no . "-" . time() . "." . $request->upload_photo->extension();
+            $ImageName = str_replace(' ', '', $ImageName);
+            $request->upload_photo->move(public_path('driver-upload'), $ImageName);
+        }
+
+        $validated = $request->validated();
+        $validated['profile_image_path'] = $request->hasFile('upload_photo') ? "/driver-upload/$ImageName" : $request->ExistingImagePath;
+
+        if ($request->vehicle_insurance_expiry) {
+            $validated['vehicle_insurance_expiry'] = date('Y-m-d', strtotime($request->vehicle_insurance_expiry));
+        }
+
+        if ($request->vehicle_license_expiry) {
+            $validated['vehicle_license_expiry'] = date('Y-m-d', strtotime($request->vehicle_license_expiry));
+        }
+
+        if ($request->pco_license_no_expiry) {
+            $validated['pco_license_no_expiry'] = date('Y-m-d', strtotime($request->pco_license_no_expiry));
+        }
+
+        if ($request->driver_license_no_expiry) {
+            $validated['driver_license_no_expiry'] = date('Y-m-d', strtotime($request->driver_license_no_expiry));
+        }
+
+        if ($request->mot_no_expiry) {
+            $validated['mot_no_expiry'] = date('Y-m-d', strtotime($request->mot_no_expiry));
+        }
+
+
+        $driver = $this->driver->updateDriver($id, $validated);
+
+
+
+
+        if ($driver) {
+            return redirect()->route('driver.index')->with('success_update', 'Driver updated sucessfully.');
+        } else {
+            return redirect()->route('driver.index')->with('failed_saveOrUpdate', 'Driver data not updated.');
+        }
+    }
+
+
+    public function destroy(Driver $driver)
+    {
+        $this->permission->check_privilege($this->module, self::ACTION_TYPE['destroy']);
+        $data = $driver->delete();
+        return response()->json($data ? ['status' => 200, 'isDeleted' => true] : ['status' => 400, 'isDeleted' => false]);
+    }
+
+
+    public function DriverStatusUpdate(Request $request)
+    {
+        $data = Driver::updateOrCreate(['id' => $request->id], ['status' => $request->isActive]);
+        return  response()->json($data->id ? ['status' => 200, 'isUpdated' => true] : ['status' => 400, 'isUpdated' => false]);
+    }
+
+
+    public function DriverPasswordChange(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 400,
+                'errors' => $validator->errors()
+            ]);
+        } else {
+            $data = Driver::updateOrCreate(['id' => $request->driver_id], ['password' => Hash::make($request->password)]);
+        }
+
+        return  response()->json($data->id ? ['status' => 200, 'isUpdated' => true, 'errors' => NULL] : ['status' => 400, 'isUpdated' => false, 'errors' => NULL]);
+    }
+
+    public function FileUpload(Request $request)
+    {
+        $description = $request->input('description');
+        $validator = Validator::make($request->all(), [
+            'select_file' => 'required|mimes:jpeg,png,jpg,pdf|max: 1024'
+
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->all(),
+                'uploaded_image' => '',
+                'class_name' => 'alert-danger',
+                'isUploaded' => false
+            ]);
+        } else {
+            
+            $image = $request->file('select_file');
+            $new_name = $request->driver_id . "-" . time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('driver-documents/' . $request->driver_id . ''), $new_name);
+
+            $validated['driver_id'] = $request->driver_id;
+            $validated['description'] = $request->description;
+            $validated['file_path'] = $new_name;
+            $driver_documents = $this->driver_documents->createDriverDocuments($validated);
+
+            $document_details = DB::table('driver_documents')
+                ->select('*')
+                ->where('driver_id', '=', $request->driver_id)
+                ->get();
+            if ($driver_documents) {
+                return response()->json([
+                    'message' => 'Documents Uploaded successfully',
+                    'uploaded_image' => '<img src="/driver-documents/' . $request->driver_id . '/' . $new_name . ' " class="img-thumbnail" width: "300" />',
+                    'class_name' => 'alert-success',
+                    'document_details' => $document_details,
+                    'isUploaded' => true
+                ]);
+            }
+        }
+    }
+
+    public function FileDelete(Request $request)
+    {
+        //dd($request);
+        $documents = DB::table('driver_documents')
+            ->select('*')
+            ->where('id', '=', $request->document_id)
+            ->get();
+        $doc = [];
+        if ($documents == true) {
+
+            foreach ($documents as $doc) {
+                $delete_table = DB::table('driver_documents')->where('id', '=', $doc->id)->delete();
+
+                if ($delete_table == true && File::exists('driver-documents/' . $doc->driver_id . '/' . $doc->file_path . '')) {
+                    $delete_file =  File::delete('driver-documents/' . $doc->driver_id . '/' . $doc->file_path . '');
+                }
+            }
+        }
+        $document_details = DB::table('driver_documents')
+            ->select('*')
+            ->where('driver_id', '=', $doc->driver_id)
+            ->get();
+        //dd($document_details);
+        return response()->json($delete_file ? ['status' => 200, 'isDeleted' => true, 'document_details' => $document_details] : ['status' => 400, 'isDeleted' => false, 'document_details' => $document_details]);
+    }
+
+    public function DriverExcelExport(Request $request)
+    {
+        $data = [];
+        return $this->excel_export->driver_export($request);
+    }
+
+    public function MyDriver($booking_id){
+        $driver_details = DB::table('bookinfo')
+            ->leftjoin('driver', 'driver.id', '=', 'bookinfo.driver_id')
+            ->where('bookinfo.job_no', '=', $booking_id)
+            ->get()
+            ->first();
+            
+              $book_id = preg_replace('/[^0-9]/', '', $booking_id);
+            
+            // \DB::enableQueryLog();
+            $pickup_points = DB::table('pick_up_points')->where('booking_id','=',$book_id)->get();
+    //   dd(\DB::getQueryLog());
+            
+            $vehicle = DB::table('vehicle')->where('ref','=',$driver_details->vech_type)->get();
+    
+        if(empty($driver_details)){
+            abort(404);
+        }
+
+        return view('drivers.my_driver', compact('driver_details','vehicle','pickup_points'));
+    }
+}

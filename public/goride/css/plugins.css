@@ -1,0 +1,19 @@
+/* ----------------------------------------------------------------
+			[ All Css Plugins & Helper services File ]
+-----------------------------------------------------------------*/
+
+/* == Bootstrap == */
+@import url("plugins/bootstrap.min.css");
+
+/* == Owl.carousel == */
+@import url("plugins/owl.carousel.min.css");
+@import url("plugins/owl.theme.default.min.css");
+
+/* == Animate css == */
+@import url("plugins/animate.min.css");
+
+/* == Icons (omFont, flaticon, themify and fontawesome icons ==*/
+@import url("plugins/omFont.css");
+@import url("plugins/flaticon.css");
+@import url("plugins/themify-icons.css");
+@import url("plugins/font-awesome-pro.css");

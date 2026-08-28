@@ -1,0 +1,1337 @@
+
+
+                      .via-point {
+                        margin-bottom: 10px;
+                      }
+                      .icon-btn {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #cdcdcd;
+  background: white;
+  border-radius: 25px;
+  overflow: hidden;
+  position: relative;
+  transition: width 0.2s ease-in-out;
+  font-weight: 500;
+  font-family: inherit;
+  text-decoration: none; /* Prevent underline in links */
+  display: inline-block; /* Make sure it behaves like a button */
+  text-align: center; /* Center the text */
+  color: inherit; /* Inherit text color */
+}
+
+.add-btn:hover {
+  width: 120px;
+}
+
+.add-btn::before,
+.add-btn::after {
+  transition: width 0.2s ease-in-out, border-radius 0.2s ease-in-out;
+  content: "";
+  position: absolute;
+  height: 4px;
+  width: 10px;
+  top: calc(50% - 2px);
+  background: seagreen;
+}
+
+.add-btn::after {
+  right: 14px;
+  overflow: hidden;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+.add-btn::before {
+  left: 14px;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+
+.icon-btn:focus {
+  outline: none;
+}
+
+.btn-txt {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.add-btn:hover::before,
+.add-btn:hover::after {
+  width: 4px;
+  border-radius: 2px;
+}
+
+.add-btn:hover .btn-txt {
+  opacity: 1;
+      margin-top: 14px;
+    font-size: 13px;
+}
+
+.add-icon::after,
+.add-icon::before {
+  transition: all 0.2s ease-in-out;
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 2px;
+  top: calc(50% - 10px);
+  background: seagreen;
+  overflow: hidden;
+}
+
+.add-icon::before {
+  left: 22px;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+
+.add-icon::after {
+  right: 22px;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+.add-btn:hover .add-icon::before {
+  left: 15px;
+  height: 4px;
+  top: calc(50% - 2px);
+}
+
+.add-btn:hover .add-icon::after {
+  right: 15px;
+  height: 4px;
+  top: calc(50% - 2px);
+}
+#add-via-point {
+    position: absolute;
+    right: 34px;
+    top: 143px;
+}
+
+    /*--- Main Form ---*/
+    
+@import'https://fonts.googleapis.com/css?family=Work+Sans:200,300,400,600&display=swap';
+
+.booking h1 {
+	font-family: sans-serif
+}
+
+body {
+	font-family: "Arial", sans-serif
+}
+
+.form-minimum-waypoints h1,
+.form-minimum-waypoints h2,
+body {
+	margin: 0 0 0 0;
+	padding: 0 0 0 0
+}
+
+.form-minimum-waypoints a {
+	outline: none;
+	border: 0;
+	text-decoration: none;
+}
+
+.field-swap-actions .field-swap,
+.field-swap-actions,
+.group .field .field-row:after,
+.group .field .field-icon,
+.group .field.field-waypoint .field-drag:before,
+.group .field,
+.group,
+.booking .field.field-waypoint .field-journey-action,
+.booking,
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	box-sizing: border-box
+}
+
+.booking .field.field-waypoint .field-journey-connector:before,
+.group .field.field-waypoint .field-journey-node .ots-icon,
+.booking .field.field-waypoint .field-journey-action .field-journey-node:before {
+	transform: translate(-50%, -50%);
+	position: absolute;
+	top: 50%;
+	left: 50%
+}
+
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	appearance: none
+}
+
+.booking h1 {
+	font-family: sans-serif
+}
+
+body {
+	font-family: "Arial", sans-serif
+}
+
+h1,
+h2,
+body {
+	margin: 0 0 0 0;
+	padding: 0 0 0 0
+}
+
+a {
+	outline: none;
+	border: 0
+}
+
+.field-swap-actions .field-swap,
+.field-swap-actions,
+.group .field .field-row:after,
+.group .field .field-icon,
+.group .field.field-waypoint .field-drag:before,
+.group .field,
+.group,
+.booking .field.field-waypoint .field-journey-action,
+.booking,
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	box-sizing: border-box
+}
+
+.booking .field.field-waypoint .field-journey-connector:before,
+.group .field.field-waypoint .field-journey-node .ots-icon,
+.booking .field.field-waypoint .field-journey-action .field-journey-node:before {
+	transform: translate(-50%, -50%);
+	position: absolute;
+	top: 50%;
+	left: 50%
+}
+
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	appearance: none
+}
+
+.booking h1 {
+	font-family: sans-serif
+}
+
+
+body {
+	font-family: "Arial", sans-serif
+}
+
+h1,
+h2,
+body {
+	margin: 0 0 0 0;
+	padding: 0 0 0 0
+}
+
+a {
+	outline: none;
+	border: 0
+}
+
+.field-swap-actions .field-swap,
+.field-swap-actions,
+.group .field .field-row:after,
+.group .field .field-icon,
+.group .field.field-waypoint .field-drag:before,
+.group .field,
+.group,
+.booking .field.field-waypoint .field-journey-action,
+.booking,
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	box-sizing: border-box
+}
+
+.booking .field.field-waypoint .field-journey-connector:before,
+.group .field.field-waypoint .field-journey-node .ots-icon,
+.booking .field.field-waypoint .field-journey-action .field-journey-node:before {
+	transform: translate(-50%, -50%);
+	position: absolute;
+	top: 50%;
+	left: 50%
+}
+
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	appearance: none
+}
+
+* {
+	font-family: inherit;
+	color: inherit;
+	text-align: inherit;
+	text-transform: inherit
+}
+
+body {
+	height: auto;
+	width: 100%;
+	background-color: #282828;
+	font-size: 12px
+}
+
+a {
+	text-decoration: underline;
+	color: inherit
+}
+
+strong {
+	font-weight: 600
+}
+
+input {
+	background-color: #fff
+}
+
+input:-ms-input-placeholder {
+	color: #ccc !important
+}
+
+input::-webkit-input-placeholder {
+	color: #ccc !important
+}
+
+input:-moz-placeholder {
+	color: #ccc !important
+}
+
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	margin: 0 auto;
+	border-radius: 0;
+	font-size: 12px;
+	padding: 5px;
+	width: 100%;
+	color: #282828
+}
+
+input[type=text],
+input[type=date],
+input[type=time],
+select,
+input[type=email],
+input[type=password],
+form .button {
+	outline: none
+}
+
+
+.booking {
+	/*position: absolute;*/
+	left: 4%;
+	margin: 35px 0 0 0;
+	padding: 2em 2em 5em 2em;
+	width: 100%;
+	max-width: 100%;
+	background-color: #282828;
+	background: -webkit-linear-gradient(-70deg, #282828 0%, #363636 100%);
+	background: linear-gradient(160deg, #282828 0%, #363636 100%);
+	z-index: 999
+}
+
+.booking .field-label {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin: 5px 0 5px 0;
+	padding: 0;
+	font-size: 14px
+}
+
+.booking .field-label {
+	width: 100%;
+	font-weight: 700;
+	color: #282828
+}
+
+.booking .field-label>span {
+	flex-grow: 1;
+	display: block;
+	font-weight: bold;
+	padding: 0 3px 0 3px
+}
+
+.booking .group {
+	padding: 0 0 0 10px
+}
+
+.booking .group.group-info {
+	padding: 0 0 0 0
+}
+
+.booking h2 {
+	color: #fff
+}
+
+.booking .form-group {
+	background: #ccc;
+	border-radius: 5px;
+	padding-top: 5px
+}
+
+.booking.form-minimum-waypoints .field:not(.has-value) .field-journey-action:hover .field-journey-node {
+	background: #666
+}
+
+.booking.form-minimum-waypoints .field:not(.has-value) .field-journey-action:hover .field-journey-node:hover {
+	background: #2783cf
+}
+
+.booking.form-minimum-waypoints .field:not(.has-value) .field-journey-action:hover .field-journey-node:before {
+	opacity: 0
+}
+
+.booking .field-row,
+.booking .field-row-interior {
+	min-height: 42px;
+}
+
+.booking h2 {
+	flex-grow: 1;
+	color: #fff
+}
+
+.booking .group.group-info {
+	flex-direction: column
+}
+
+.booking .group.group-info .form-information-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: center
+}
+
+.booking .group.group-info .form-information-heading {
+	width: 100%
+}
+
+
+.booking input[type=text],
+.booking input[type=date],
+.booking input[type=time],
+.booking select,
+.booking input[type=email],
+.booking input[type=password] {
+	background-color: #fff;
+	font-size: 16px;
+	padding: 10px 0 10px 25px;
+	border-radius: 5px;
+	border: 1px solid #a6a6a6
+}
+
+.ots-icon path {
+	fill: currentColor
+}
+
+.booking .field {
+	color: #282828
+}
+
+.booking .field .has-text-content {
+	transition: padding 330ms ease;
+	border-radius: 5px;
+	text-overflow: ellipsis
+}
+
+.booking .field .field-journey-action,
+.booking .field .field-icon {
+	display: flex;
+	flex-grow: 0;
+	flex-shrink: 0;
+	flex-direction: column;
+	justify-content: center;
+	width: auto;
+	z-index: 2
+}
+
+.booking .field .field-icon:hover .ots-icon.ots-icon-waypoint {
+	display: none
+}
+
+.booking .field.field-waypoint .field-journey-action {
+	position: relative;
+	padding: 8px 0 8px 5px;
+	min-width: 27px
+}
+
+.booking .field.field-waypoint .field-journey-action .field-journey-node {
+	width: 20px;
+	height: 20px;
+	background: currentColor;
+	border-radius: 100%;
+	position: relative;
+	display: block
+}
+
+.booking .field.field-waypoint .field-journey-action .field-journey-node:before {
+	transform: translate(-50%, -50%) scale(0.4, 0.4);
+	transition: 220ms ease;
+	display: block;
+	content: "";
+	width: 100%;
+	height: 100%;
+	background: #ccc;
+	border-radius: 100%
+}
+
+.action-group {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 10px;
+	position: relative
+}
+
+.action-group .field.field-submit {
+	display: flex;
+	flex-grow: 1;
+	padding-left: 10px;
+	max-width: 40%
+}
+
+.action-group .field.field-submit:first-child {
+	padding-left: 0
+}
+
+.action-group .field.field-submit.field-submit-primary {
+	flex-shrink: 0;
+	flex-grow: 2;
+	max-width: 100%
+}
+
+.action-group .field.field-submit.field-submit-primary .button {
+	color: #fff;
+	background: #2783cf;
+	border: 1px solid #378fd9
+}
+
+
+.action-group .field.field-submit.field-submit-primary .button:hover {
+	border-color: #1f68a5;
+	background: #1f68a5
+}
+
+.group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	width: 100%;
+	position: relative
+}
+
+.group .field {
+	width: 100%;
+	color: #282828
+}
+
+.group .field:not(.valid):not(.invalid):not(.warning):not(.suggesting):not(.loading):not(.swapping):not(.dragging) {
+	color: transparent !important
+}
+
+.group .field:not(.valid):not(.invalid):not(.warning):not(.suggesting):not(.loading):not(.swapping):not(.dragging) .field-journey-node {
+	color: #666
+}
+
+.group .field.field-align-left .field-icon+.has-text-content {
+	padding-left: calc(20px + .6em)
+}
+
+.group .field.field-align-left .field-icon {
+	left: 0;
+	padding-left: .6em
+}
+
+.group .field.field-waypoint .field-drag {
+	display: flex;
+	justify-content: flex-end;
+	min-height: 42px;
+	position: relative;
+	z-index: 1
+}
+
+.group .field.field-waypoint .field-drag:before {
+	transition: 440ms ease;
+	position: absolute;
+	display: block;
+	content: " ";
+	height: 100%;
+	width: calc(100% - 27px);
+	left: 0;
+	border-radius: 5px;
+	border: 1px solid rgba(40, 40, 40, .1);
+	background: rgba(40, 40, 40, .1)
+}
+
+.group .field.field-waypoint .field-journey-node {
+	transition: 220ms ease;
+	z-index: 2;
+	border-radius: 9px
+}
+
+.group .field.field-waypoint .field-journey-node .ots-icon {
+	width: 12px;
+	height: 12px;
+	color: #ccc;
+	z-index: 1
+}
+
+.group .field .field-icon {
+	display: flex;
+	align-items: center;
+	transition: 330ms ease;
+	padding-bottom: 2px;
+	border: 1px solid transparent;
+	position: absolute;
+	height: 100%;
+	overflow: hidden;
+	color: #666
+}
+
+.group .field .field-icon .ots-icon {
+	transition: margin 330ms ease;
+	width: 16px;
+	height: 16px;
+	margin-top: 1px
+}
+
+.group .field .has-text-content {
+	box-shadow: inset 1000px 1000px #fff;
+	flex-grow: 1;
+	margin: 0 0 0 0;
+	width: 100%
+}
+
+.group .field .field-row {
+	display: flex;
+	flex-grow: 1;
+	position: relative
+}
+
+
+.group .field .field-row:after {
+	transition: width 900ms ease;
+	border-style: solid;
+	border-color: #a6a6a6;
+	border-width: 0 1px 1px 1px;
+	content: " ";
+	display: block;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	background: currentColor;
+	pointer-events: none;
+	border-radius: 0 0 5px 5px;
+	height: 3px;
+	z-index: 3
+}
+
+.group.group-waypoint .field-row {
+	flex-direction: column;
+	width: 100%
+}
+
+.group.group-waypoint .field-row .field-row-interior {
+	display: flex;
+	width: 100%;
+	position: relative
+}
+
+.group.group-waypoint.focused-last {
+	z-index: 0;
+}
+
+.group.group-waypoint.group-waypoint-via .field-journey-action .field-journey-node {
+	cursor: pointer
+}
+
+.booking h1 {
+	margin: 0 0 4px 0;
+	padding: 0;
+	font-size: 26px;
+	color: #fff;
+	text-transform: uppercase
+}
+
+.booking h1 span {
+	font-weight: 400
+}
+
+.booking h2 {
+	margin: 10px 0 10px 0;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.25em
+}
+
+.booking h2[data-trigger] {
+	cursor: pointer
+}
+
+form {
+	font-size: 12px
+}
+
+.booking .form-group .field {
+	padding: 2px 10px 10px 0
+}
+
+.booking .form-group .field .field-row:after {
+	height: 4px
+}
+
+form .button {
+	transition: 220ms ease;
+	display: block;
+	text-align: center;
+	background-color: #ffca09;
+	font-weight: 800;
+	color: #0c0c0c;
+	cursor: pointer;
+	border-radius: 5px;
+	padding: 12px 12px;
+	border-width: 1px;
+	border-style: solid;
+	width: 100%;
+	font-size: 12px;
+	border-color: #ffd53c;
+	text-decoration: none
+}
+
+form .button:hover {
+	border-color: #d5a700;
+	background: #d5a700
+}
+
+/*form .button.secondary {*/
+/*	padding: 12px 3.3333333333px*/
+/*}*/
+
+form .button.disabled {
+	cursor: not-allowed;
+	opacity: .5;
+	filter: saturate(0.5)
+}
+
+
+form .button .ots-icon {
+	width: 16px;
+	height: 16px;
+	vertical-align: -2px;
+	margin-bottom: -1px;
+	pointer-events: none
+}
+
+form .button .ots-icon:nth-child(2n) {
+	margin-left: .3em
+}
+
+form .button span {
+	white-space: nowrap
+}
+
+.booking .field.field-waypoint .field-journey-connector {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	position: absolute;
+	float: none;
+	height: 100%;
+	padding: 0;
+	overflow: hidden;
+	color: rgba(102, 102, 102, .8);
+	z-index: 0;
+	width: 16px;
+	bottom: 29px;
+	right: 14px
+}
+
+.booking .field.field-waypoint .field-journey-connector:before {
+	display: block;
+	writing-mode: vertical-rl;
+	z-index: 0;
+	color: inherit;
+	opacity: .4;
+	text-align: center;
+	width: 7px;
+	line-height: 7px;
+	white-space: nowrap;
+	font-size: 21px;
+	letter-spacing: 2px;
+	content: "••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••"
+}
+
+.booking .field.field-waypoint .field-journey-connector .field-journey-node {
+	transition: 220ms ease;
+	background: #8c8c8c;
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+	cursor: hand
+}
+
+.booking .field.field-waypoint .field-journey-connector .field-journey-node .ots-icon {
+	width: 10px;
+	height: 10px;
+	z-index: 5
+}
+
+.booking .field.field-waypoint .field-journey-connector .field-journey-node:hover {
+	background: #2783cf
+}
+
+body.hoverable .suggestables-container ul.suggestable-list:not(:hover) li.suggestable .clickable.focus {
+	background: #378fd9;
+	color: #fff;
+	cursor: pointer
+}
+
+body.hoverable .suggestables-container ul.suggestable-list:not(:hover) li.suggestable .clickable.focus header h4,
+body.hoverable .suggestables-container ul.suggestable-list:not(:hover) li.suggestable .clickable.focus header p {
+	color: #fff
+}
+
+body.hoverable .suggestables-container ul.suggestable-list:not(:hover) li.suggestable .clickable.focus .suggestable-icon,
+body.hoverable .suggestables-container ul.suggestable-list:not(:hover) li.suggestable .clickable.focus .suggestable-count {
+	background: #fff;
+	color: #2375ba
+}
+
+.field-swap-actions {
+	transition: opacity 220ms ease;
+	padding-right: 27px;
+	color: #767676;
+	position: absolute;
+	top: 10px;
+	left: 0;
+	width: 100%;
+	width: calc(100% - 27px);
+	height: 100%;
+	opacity: 1
+}
+
+.field-swap-actions .field-swap {
+	cursor: pointer;
+	position: absolute;
+	left: 50%;
+	margin-left: -12px;
+	width: 24px;
+	height: 24px;
+	padding: 5px;
+	z-index: 1
+}
+
+.field-swap-actions .field-swap:active {
+	color: #2783cf
+}
+
+.field-swap-actions .field-swap.field-swap-up {
+	top: -12px
+}
+
+.field-swap-actions .field-swap svg {
+	width: 100%;
+	height: 100%
+}
+
+@media(max-width: 600px) {
+    
+    .booking {
+        margin: 20px 0 0 0;
+    }
+    
+    .termss label {
+        font-size: 6px !important;
+    }
+    
+    form .button {
+        font-size: 12px;
+    }
+    
+}
+
+@media(max-width: 446px) {
+    
+    .navbar-nav {
+        font-size: 10px;
+    }
+    
+}
+
+@media(max-width: 368px) {
+    
+    .navbar-nav {
+        font-size: 7px;
+    }
+    
+}
+
+
+/*@media(max-width: 1370px) {*/
+
+/*	.booking {*/
+/*		margin: 2% 0 0 0;*/
+/*		width: 47.5%*/
+/*	}*/
+/*}*/
+
+/*@media(max-width: 768px) {*/
+/*	.booking:after {*/
+/*		content: "";*/
+/*		position: absolute;*/
+/*		left: 0;*/
+/*		bottom: 0;*/
+/*		margin: 0 0 -15em 0;*/
+/*		height: 15em;*/
+/*		width: 100%;*/
+/*		background: -webkit-linear-gradient(-90deg, #333333 0%, rgba(51, 51, 51, 0) 100%);*/
+/*		background: linear-gradient(180deg, #333333 0%, rgba(51, 51, 51, 0) 100%)*/
+/*	}*/
+/*}*/
+
+/*@media(max-width: 767px) {*/
+
+/*	.booking {*/
+/*		position: relative;*/
+/*		left: auto;*/
+/*		padding: 10px;*/
+/*		margin: 0 auto;*/
+/*		width: 100%;*/
+/*		background: transparent*/
+/*	}*/
+/*}*/
+
+.booking .form-outer {
+	animation: fadeIn 550ms ease-in;
+	z-index: 1;
+	position: relative
+}
+
+@-webkit-keyframes fadeIn {
+	0% {
+		opacity: 0
+	}
+
+	33.33% {
+		opacity: 0
+	}
+
+	100% {
+		opacity: 1
+	}
+}
+
+@-webkit-keyframes fadeIn {
+	0% {
+		opacity: 0
+	}
+
+	33.33% {
+		opacity: 0
+	}
+
+	100% {
+		opacity: 1
+	}
+}
+
+@keyframes fadeIn {
+	0% {
+		opacity: 0
+	}
+
+	33.33% {
+		opacity: 0
+	}
+
+	100% {
+		opacity: 1
+	}
+}
+
+@media(max-width: 350px) {
+	.action-group .field.field-submit {
+		max-width: 50%
+	}
+}
+
+.field-row-cover {
+	display: none
+}
+
+/* body:not(.scripts-loaded) {
+	pointer-events: none !important
+} */
+
+form .group.group-vehicle-suggestion .field select option:not(:disabled) {
+	color: #0c0c0c
+}
+
+
+/* --- New CSS --- */
+
+.via-point-one, .via-point-two, .via-point-three {
+    /*display: none;*/
+}
+
+
+.placeholder {
+    position: absolute;
+    left: 10px; /* Adjust as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+    font-size: 16px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  
+  /* Animation */
+  @keyframes typing {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  
+  .placeholder.typing::after {
+    content: '|';
+    animation: typing 1s steps(10, end) infinite;
+  }
+  
+  .placeholder::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+  }
+  
+  
+ /*--- Easy Complete ----  */
+ 
+.easy-autocomplete-container ul li, .easy-autocomplete-container ul .eac-category{
+    color: #000 !important;
+} 
+
+.easy-autocomplete {
+    width: 100% !important;
+}
+
+/*.group-waypoint-via {*/
+/*            display: none;*/
+/*}*/
+
+
+/*Discount in form*/
+
+
+
+/*View Bookings*/
+
+.button.secondary.active {
+    color: #fff;
+    background: #2783cf;
+    border: 1px solid #378fd9;
+}
+
+/*button end*/
+
+
+/*header CSS*/
+
+
+/*end header CSS*/
+
+
+/*main-wrapper*/
+
+.card-box {
+    position: relative;
+    width: 100%;
+    padding: 30px;
+    background: #FFF;
+    border-radius: 4px;
+    box-shadow: 0px 0px 20px #0000001a;
+}
+
+.booking-headings {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0px 0px 15px;
+}
+
+.booking-headings h4 {
+    margin: 0px;
+    padding: 0px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.booking-headings .edit-icon {
+    display: block;
+    width: 40px;
+    height: 40px;
+    background: #f8f8f8;
+    text-align: center;
+    line-height: 40px;
+    border-radius: 50%;
+    color: #444;
+    border: 0px;
+}
+
+.dropdown-menu {
+    padding: 0px !important;
+    font-size: 14px !important;
+}
+
+.dropdown-item:active {
+    color: #fff;
+    text-decoration: none;
+    background-color: #444;
+}
+
+.booking-received {
+    position: revert!important;
+}
+
+.journeytype-head {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+}
+
+.journey-text {
+    position: relative;
+}
+
+.journey-text h3 {
+    position: relative;
+    margin: 0px;
+    padding: 0px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.booking-received .info-wrapper .route-wrapper {
+    background: #EFEFEF;
+    padding: 10px 15px;
+    margin-bottom: 0;
+    border-radius: 5px;
+    margin-top: 0;
+}
+
+.booking-received .info-wrapper .route-wrapper .col-md-6 p {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.booking-received .info-wrapper .route-wrapper .col-md-12 p {
+    font-weight: 500;
+    margin-bottom: 5px;
+    font-size: 11px;
+}
+
+.booking-received .info-wrapper .route-wrapper .route-bar .route-circle {
+    height: 15px;
+    width: 15px;
+    background: transparent;
+    display: block;
+    border-radius: 50%;
+    margin-bottom: 14px;
+    margin: 8px 0 10px;
+}
+
+.booking-received .info-wrapper .route-wrapper .route-bar .route-circle {
+    position: relative;
+}
+
+.booking-received .info-wrapper .route-wrapper .route-bar .route-circle::after {
+    content: "";
+    position: absolute;
+    height: 33px;
+    width: 3px;
+    top: 100%;
+    left: 45%;
+    background: #777;
+}
+
+.booking-received .info-wrapper .route-wrapper .route-bar .end::after {
+    display: none;
+}
+
+.booking-received .info-wrapper .route-wrapper .route-bar .start {
+    background: #16ce5f;
+}
+
+.booking-received .info-wrapper .route-wrapper .route-bar .end {
+    background: #ff0c00;
+}
+
+.booking-received .info-wrapper .route-wrapper p {
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.route-labels {
+    display: flex;
+    align-items: flex-end;
+}
+
+.route-labels p {
+    margin-left: 16px;
+}
+
+.route-bar {
+    margin-top: 10px;
+}
+
+.route-wrapper h3 {
+    font-size: 22px;
+}
+
+/*end left-side-container*/
+
+.badge {
+    color: #fff;
+    background-color: #28a745;
+}
+
+a#ex1-tab-1:hover, a#ex1-tab-2:hover, a#ex1-tab-3:hover {
+    color:#000;
+}
+
+/*Discounted Price*/
+
+.pick-price {
+    position: relative; /* Ensures the discount label can be positioned relative to this element */
+}
+
+.discount-label {
+    position: absolute;
+    top: -16px;
+    right: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url(../images/background-label.svg);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding: 0 0 0 0;
+    transform: scale(0.8) rotate(-22deg);
+    width: 50px;
+    height: 25px;
+    z-index: 1;
+}
+
+.discount-label span {
+    color:white;
+}
+
+.pick-price a {
+    display: flex;
+    justify-content: space-around;
+    background: #ff8b2a;
+    color: #000;
+    margin: 5px;
+    padding: 5px 2px;
+    border-radius: 5px;
+}
+
+.pick-price .original-price {
+    text-decoration: line-through;
+    color: #000; /* Optional: keep original price in black */
+    margin: 0 5px;
+}
+
+.pick-price .discount-price {
+    color: red;
+    font-weight: 800;
+}
+
+.badge_view_more {
+    width: 100%;
+    outline: none;
+    border: none;
+    padding: 8px 0;
+    color: #fff;
+    background-color: #28a745;
+    display: inline-block;
+    font-size: .75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25rem;
+}
+
+span.price-flex {
+    font-weight: 700;
+}
+
+.promotion {
+    font-weight: 800;
+    font-size: 12px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

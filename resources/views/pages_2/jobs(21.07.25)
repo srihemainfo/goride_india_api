@@ -1,0 +1,3233 @@
+@extends('layouts.app')
+@section('css')
+<link href="{{ asset('/goride/css/packageHis.css') }}" rel="stylesheet">
+<style>
+    .pricing-section {
+        padding: 10px 0;
+    }
+
+    a.thm-btn.borderd {
+        cursor: pointer;
+    }
+
+    .sec-title h2 {
+        font-size: 32px;
+        color: #170B35;
+        font-weight: 600;
+    }
+
+    .sec-title p {
+        font-size: 20px;
+        line-height: 26px;
+        color: #656565;
+        margin-top: 20px;
+    }
+
+    .sec-title {
+        margin-bottom: 100px;
+    }
+
+    .pricing-section ul.switch-toggler-list {
+        margin-bottom: 18px;
+    }
+
+    .list-inline li {
+        display: inline-block;
+    }
+
+    .pricing-section ul.switch-toggler-list li.active a {
+        color: #000;
+    }
+
+    .pricing-section ul.switch-toggler-list li a {
+        font-size: 18px;
+        font-weight: 600;
+        color: #989898;
+        padding-left: 10px;
+        padding-right: 10px;
+        display: block;
+    }
+
+    .pricing-section .switch,
+    .pricing-section .switch1 {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+        vertical-align: middle;
+    }
+
+    .pricing-section .switch.on .slider,
+    .pricing-section .switch1.on .slider {
+        background: #d43396;
+        background: -webkit-gradient(left top, right top, color-stop(0%, #d43396), color-stop(100%, #6541c1));
+        background: -webkit-gradient(linear, left top, right top, from(#d43396), to(#6541c1));
+        background: linear-gradient(to right, #d43396 0%, #6541c1 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#d43396', endColorstr='#6541c1', GradientType=1);
+    }
+
+    .pricing-section .slider.round {
+        border-radius: 34px;
+    }
+
+    .pricing-section .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #6541c1;
+        background: -webkit-gradient(left top, right top, color-stop(0%, #6541c1), color-stop(98%, #d43396), color-stop(100%, #d43396));
+        background: -webkit-gradient(linear, left top, right top, from(#6541c1), color-stop(98%, #d43396), to(#d43396));
+        background: linear-gradient(to right, #6541c1 0%, #d43396 98%, #d43396 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#6541c1', endColorstr='#d43396', GradientType=1);
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    .pricing-section .slider.round:before {
+        border-radius: 50%;
+    }
+
+    .pricing-section .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    .pricing-section .tabed-content #year {
+        display: none;
+    }
+
+    .pricing-section .pricing-row {
+        padding-top: 20px;
+    }
+
+    .pricing-section .single-pricing {
+        position: relative;
+        background: #E8E6E6;
+        border-radius: 15px;
+    }
+
+    .pricing-section .single-pricing:before {
+        content: '';
+        background: #fff;
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        right: 4px;
+        bottom: 4px;
+        border-radius: 15px;
+    }
+
+    .pricing-section .single-pricing .inner {
+        position: relative;
+        padding-bottom: 45px;
+        padding-top: 45px;
+    }
+
+    .pricing-section .single-pricing h3.title {
+        font-size: 24px;
+        color: #170B35;
+        font-weight: 600;
+    }
+
+    .plan-tag p span {
+        font-size: 12px;
+        color: #000;
+        font-weight: 700;
+        display: inline-block;
+        width: 70%;
+        border-top: 2px solid #000;
+        line-height: 20px;
+        margin: 0;
+    }
+
+    .plan-tag {
+        width: 85px;
+        height: 95px;
+        position: absolute;
+        right: 16px;
+        top: -12px;
+        background-image: url(/goride/img/Tag1.png);
+        background-repeat: no-repeat;
+        padding: 0;
+        box-sizing: border-box;
+        text-align: center;
+        background-size: contain;
+    }
+
+    .plan-tag p.anu {
+        font-size: 17px;
+        line-height: 20px;
+        position: absolute;
+        top: 10px;
+        right: -8px;
+    }
+
+    .modal {
+        padding: 0;
+    }
+
+    .pricing-section .single-pricing h3,
+    .pricing-section .single-pricing p,
+    .pricing-section .single-pricing ul,
+    .pricing-section .single-pricing li {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .pricing-section .single-pricing p.price {
+        background: -webkit-gradient(linear, left top, right top, from(#6541c1), color-stop(98%, #d43396), to(#d43396));
+        background: linear-gradient(to right, #6541c1 0%, #d43396 98%, #d43396 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 53px;
+        font-weight: 200;
+        line-height: 1em;
+        margin-bottom: 20px;
+        margin-top: 20px;
+    }
+
+    .pricing-section .single-pricing p.price-label {
+        font-size: 18px;
+        font-weight: 600;
+        color: #656565;
+    }
+
+    .pricing-section .single-pricing ul.list-item {
+        margin-top: 45px;
+    }
+
+    .pricing-section .single-pricing ul.list-item li {
+        font-size: 14px;
+        color: #170B35;
+        font-weight: 500;
+    }
+
+    .pricing-section .single-pricing ul.list-item li i.fa-check {
+        color: #12CE32;
+    }
+
+    .pricing-section .single-pricing ul.list-item li i {
+        vertical-align: middle;
+        margin-right: 5px;
+    }
+
+    .pricing-section .single-pricing ul.list-item li i.fa-times {
+        color: #FF0302;
+    }
+
+    .pricing-section .single-pricing a.thm-btn {
+        padding: 10px 30px;
+        margin-top: 20px;
+    }
+
+    .thm-btn.borderd:before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 2px;
+        bottom: 2px;
+        border-radius: 28px;
+        background: #fff;
+        opacity: 1;
+        -webkit-transition: all .4s ease;
+        transition: all .4s ease;
+    }
+
+    .thm-btn>span {
+        position: relative;
+    }
+
+    .pricing-section .single-pricing.popular {
+        background: #6541c1;
+        background: -webkit-gradient(left top, right top, color-stop(0%, #6541c1), color-stop(98%, #d43396), color-stop(100%, #d43396));
+        background: -webkit-gradient(linear, left top, right top, from(#6541c1), color-stop(98%, #d43396), to(#d43396));
+        background: linear-gradient(to right, #6541c1 0%, #d43396 98%, #d43396 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#6541c1', endColorstr='#d43396', GradientType=1);
+        margin-top: -20px;
+    }
+
+    .pricing-section .single-pricing:before {
+        content: '';
+        background: #fff;
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        right: 4px;
+        bottom: 4px;
+        border-radius: 15px;
+    }
+
+    .pricing-section .single-pricing.popular .inner {
+        padding-top: 65px;
+        padding-bottom: 65px;
+    }
+
+    .pricing-section .single-pricing.popular .thm-btn {
+        color: #fff;
+        -webkit-box-shadow: 0px 15px 30px rgba(212, 50, 151, 0.27);
+        box-shadow: 0px 15px 30px rgba(212, 50, 151, 0.27);
+    }
+
+    .thm-btn {
+        display: inline-block;
+        border: none;
+        outline: none;
+        background: #6541c1;
+        background: -webkit-gradient(left top, right top, color-stop(0%, #6541c1), color-stop(98%, #d43396), color-stop(100%, #d43396));
+        background: -webkit-gradient(linear, left top, right top, from(#6541c1), color-stop(98%, #d43396), to(#d43396));
+        background: linear-gradient(to right, #6541c1 0%, #d43396 98%, #d43396 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#6541c1', endColorstr='#d43396', GradientType=1);
+        color: #FFFFFF;
+        font-size: 16px;
+        font-weight: 600;
+        -webkit-transition: all .4s ease;
+        transition: all .4s ease;
+        border-radius: 28px;
+        padding: 15px 29px;
+        position: relative;
+    }
+
+    .pricing-section .single-pricing.popular .thm-btn:before {
+        opacity: 0;
+    }
+
+    .thm-btn.borderd:before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 2px;
+        bottom: 2px;
+        border-radius: 28px;
+        background: #fff;
+        opacity: 1;
+        -webkit-transition: all .4s ease;
+        transition: all .4s ease;
+    }
+
+    .pricing-section .switch.off .slider:before,
+    .pricing-section .switch1.off .slider:before {
+        -webkit-transform: translateX(26px);
+        transform: translateX(26px);
+    }
+
+    .thm-btn.borderd {
+        color: #190A32;
+    }
+
+    .pricing-section .single-pricing a.thm-btn:hover {
+        -webkit-box-shadow: 0px 15px 30px rgba(212, 50, 151, 0.27);
+        box-shadow: 0px 15px 30px rgba(212, 50, 151, 0.27);
+    }
+
+    .thm-btn.borderd:hover:before {
+        opacity: 0;
+    }
+
+    .thm-btn.borderd:hover {
+        color: #fff;
+    }
+
+    @media (max-width: 736px) {
+        .pricing-section .single-pricing.popular {
+            top: 0;
+            margin-top: 50px;
+        }
+
+        .pricing-section .single-pricing {
+            max-width: 370px;
+            margin-top: 50px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-section ul.switch-toggler-list {
+            margin-bottom: 0;
+        }
+    }
+
+    ::selection {
+        background-color: #f8be00;
+        color: #ffffff;
+    }
+
+    .blantershow-chat,
+    footer,
+    .navbar.navbar-expand-lg {
+        display: none;
+    }
+
+    /*.login_dashboard_section {*/
+    /*    margin-top: 100px;*/
+    /*}*/
+    #main-wrapper {
+        min-height: 100vh;
+    }
+
+    .brand-logo {
+        min-height: 70px;
+        padding: 0 8px;
+    }
+
+    .left-sidebar {
+        width: 270px;
+        border-right: 1px solid #dee2e6;
+        flex-shrink: 0;
+        background: #fff;
+        z-index: 99;
+        transition: .2s ease-in;
+        position: fixed;
+        left: 0;
+        right: 0;
+        height: 100%;
+    }
+
+    .with-vertical {
+        display: block;
+    }
+
+    .left-sidebar .scroll-sidebar {
+        /*overflow-y: auto;*/
+        padding: 0 24px;
+        height: calc(100vh - 150px);
+        border-radius: 7px;
+    }
+
+    [data-simplebar] {
+        position: relative;
+        flex-direction: column;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        align-content: flex-start;
+        align-items: flex-start;
+    }
+
+    .simplebar-mask {
+        direction: inherit;
+        position: absolute;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: auto !important;
+        height: auto !important;
+        z-index: 0;
+    }
+
+    .simplebar-offset {
+        direction: inherit !important;
+        box-sizing: inherit !important;
+        resize: none !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        padding: 0;
+        margin: 0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .simplebar-content-wrapper {
+        direction: inherit;
+        box-sizing: border-box !important;
+        position: relative;
+        display: block;
+        height: 100%;
+        width: auto;
+        max-width: 100%;
+        max-height: 100%;
+        overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .nav-small-cap {
+        margin-top: 24px;
+        color: #f8be00;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 0;
+        line-height: 26px;
+        text-transform: uppercase;
+    }
+
+    .nav-small-cap .nav-small-cap-icon {
+        display: none;
+    }
+
+    .sidebar-nav ul .sidebar-item.selected>.sidebar-link,
+    .sidebar-nav ul .sidebar-item.selected>.sidebar-link.active,
+    .sidebar-nav ul .sidebar-item>.sidebar-link.active {
+        background-color: #f8be00;
+        color: #fff;
+    }
+
+    .sidebar-nav ul .sidebar-item .sidebar-link:hover {
+        background: #fff;
+        color: #f8be00;
+    }
+
+    .sidebar-nav ul .sidebar-item .sidebar-link {
+        display: flex;
+        font-size: 14px;
+        white-space: nowrap;
+        align-items: center;
+        line-height: 25px;
+        position: relative;
+        margin: 0 0 2px;
+        padding: 10px;
+        border-radius: 7px;
+        gap: 15px;
+        text-decoration: none;
+        font-weight: 400;
+    }
+
+    .sidebar-nav ul .sidebar-item .sidebar-link span:first-child {
+        display: flex;
+    }
+
+    .sidebar-nav ul .sidebar-item .sidebar-link {
+        display: flex;
+        font-size: 14px;
+        white-space: nowrap;
+        align-items: center;
+        line-height: 25px;
+        position: relative;
+        margin: 0 0 2px;
+        padding: 10px;
+        border-radius: 7px;
+        gap: 15px;
+        text-decoration: none;
+        font-weight: 400;
+    }
+
+    #sidebarnav {
+        padding: 0;
+        list-style: none;
+    }
+
+    @media (min-width: 1300px) {
+        .page-wrapper {
+            margin-left: 270px;
+            padding: 30px;
+        }
+    }
+
+    .rounded {
+        border-radius: 7px !important;
+    }
+
+    .bg-secondary-subtle {
+        background: linear-gradient(to right, rgb(249 189 26) 0, #fff79b 100%);
+    }
+
+    .hstack {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        align-self: stretch;
+    }
+
+    .text-primary {
+        --bs-text-opacity: 1;
+        color: rgba(93, 135, 255, var(--bs-text-opacity)) !important;
+    }
+
+    .fs-2 {
+        font-size: 1.5rem !important;
+    }
+
+    /* Redesign */
+    .cs_btn.cs_style_2 {
+        padding: 10px 15px;
+    }
+
+    .myNewCard {
+        --bs-card-spacer-y: 30px;
+        --bs-card-spacer-x: 30px;
+        --bs-card-title-spacer-y: 0.5rem;
+        --bs-card-title-color: #2a3547;
+        --bs-card-subtitle-color: var(--bs-body-color);
+        --bs-card-border-width: 0px;
+        --bs-card-border-color: #ebf1f6;
+        --bs-card-border-radius: 7px;
+        --bs-card-box-shadow: rgba(145, 158, 171, 0.2) 0px 0px 2px 0px, rgba(145, 158, 171, 0.12) 0px 12px 24px -4px;
+        --bs-card-inner-border-radius: 7px;
+        --bs-card-cap-padding-y: 15px;
+        --bs-card-cap-padding-x: 30px;
+        --bs-card-cap-bg: rgba(var(--bs-body-color-rgb), 0.03);
+        --bs-card-bg: var(--bs-body-bg);
+        --bs-card-img-overlay-padding: 1rem;
+        --bs-card-group-margin: 12px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        height: var(--bs-card-height);
+        color: var(--bs-body-color);
+        word-wrap: break-word;
+        background-color: var(--bs-card-bg);
+        background-clip: border-box;
+        border: var(--bs-card-border-width) solid var(--bs-card-border-color);
+        border-radius: var(--bs-card-border-radius);
+        box-shadow: var(--bs-card-box-shadow);
+    }
+
+    .card-title {
+        font-size: 24px;
+        margin-bottom: 8px;
+        color: var(--bs-card-title-color);
+    }
+
+    .card-subtitle {
+        color: #2a3547;
+    }
+
+    .card-body .fs-2 {
+        font-size: .75rem !important;
+    }
+
+    .text-dark {
+        color: rgba(42, 53, 71, 1) !important;
+    }
+
+    .btn-main-theme {
+        background-color: #f8be00;
+        color: #fff;
+    }
+
+    .btn-main-theme:hover {
+        border: 1px solid #f8be00;
+        color: #000;
+    }
+
+    .myNewCard {
+        border: 1px solid #ddd;
+    }
+
+    .form-label,
+    .form-check-label {
+        color: #000;
+    }
+
+    .pricing-section .single-pricing ul.list-item {
+        margin-top: 15px;
+    }
+
+    .pricing-section .single-pricing p.price {
+        margin-bottom: 0;
+        margin-top: 15px;
+    }
+
+    #crmRenewal .modal-content,
+    #crmUpgrade .modal-content {
+        width: 150%;
+        margin: 0;
+    }
+
+    #crmUpgrade .modal,
+    #crmRenewal .modal {
+        padding-top: 0;
+    }
+
+    #crmUpgrade .modal-dialog,
+    #crmRenewal .modal-dialog {
+        max-width: fit-content;
+    }
+
+    [onclick="logoutFUN()"]:hover {
+        color: #000;
+    }
+
+    #crmUpgrade .price span,
+    #crmRenewal .price span {
+        font-size: 1.5rem;
+    }
+
+    .crm_details_card a {
+        color: #0d6efd;
+    }
+
+    .crm_details_card {
+        border: 1px solid #ddd;
+        padding: 15px;
+        /*width: 300px;*/
+        font-family: Arial, sans-serif;
+        border-radius: 10px;
+    }
+
+    .crm_details_card p {
+        display: flex;
+        justify-content: space-between;
+        margin: 10px 0;
+    }
+
+    .label {
+        font-weight: bold;
+        flex: 1;
+        text-align: left;
+    }
+
+    .value {
+        flex: 1;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .copy-icon {
+        margin-left: 10px;
+        cursor: pointer;
+        color: #007bff;
+        transition: color 0.3s ease;
+    }
+
+    .copy-icon:hover {
+        color: #0056b3;
+    }
+
+    .copied {
+        color: green;
+    }
+
+    .crm_details_card i {
+        cursor: pointer;
+    }
+
+    .profile-greeting {
+        position: relative;
+        background-color: #6362e7;
+        color: #fff;
+        /*height: 205px;*/
+        border: none;
+    }
+
+    .media {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: start;
+        -ms-flex-align: start;
+        align-items: flex-start;
+    }
+
+    .media .media-body {
+        -webkit-box-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+    }
+
+    .profile-greeting .greeting-user h1 {
+        margin-bottom: 12px;
+        font-size: 24px;
+        color: #fff;
+    }
+
+    .profile-greeting .greeting-user p {
+        font-weight: 400;
+        color: rgba(255, 255, 255, .67);
+        margin-bottom: 0;
+        max-width: 56%;
+        width: -webkit-fit-content;
+        width: -moz-fit-content;
+        width: fit-content;
+        font-size: 16px;
+    }
+
+    .profile-greeting .greeting-user .btn {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        width: -webkit-fit-content;
+        width: -moz-fit-content;
+        width: fit-content;
+        margin-top: 35px;
+        line-height: 1;
+        padding: 13px 17px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 5px;
+        margin-top: 15px;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, -webkit-box-shadow 0.15s ease-in-out;
+    }
+
+    .btn-outline-white_color {
+        border-color: #fff;
+        color: #fff;
+        background-color: rgba(0, 0, 0, 0);
+    }
+
+    .profile-greeting .greeting-user .btn i {
+        margin-left: 10px;
+        font-weight: 700;
+    }
+
+    .profile-greeting .cartoon-img {
+        position: absolute;
+        bottom: 0;
+        right: 10px;
+        overflow: hidden;
+        margin-right: 20px;
+    }
+
+    .profile-greeting .greeting-user .btn:hover {
+        background-color: #fff !important;
+        color: #6362e7;
+    }
+
+    #crm_details_modal .modal-content {
+        width: 100%;
+        border: none;
+    }
+
+    #crm_details_modal .crm_details_card {
+        border: none;
+    }
+
+    .admin_name img {
+        width: 50px;
+    }
+
+    .ad_section img {
+        border-radius: 20px;
+    }
+
+    #setupCrmModal .modal-content {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    #setupCrmModal .modal-dialog {
+        max-width: 900px;
+    }
+
+    #setupCrmModal .btn-close {
+        position: relative;
+        top: -25px;
+    }
+
+    .card:hover {
+        border-color: #c3c6ce;
+        box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-light:hover {
+        border: 1px solid #d3d4d5;
+    }
+
+    #mobile_menu_opener {
+        display: none;
+    }
+   .view-btn {
+    background: #f8be00;
+    color: white;
+}
+  .view-btn:hover {
+    background: #f8be00;
+    color: black;
+}
+  .custom-modal-width {
+    max-width: 90%;
+  }
+
+.journey-card {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  background: #64748b21;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  font-family: 'Segoe UI', sans-serif;
+  max-width: 800px;
+  margin: 15px auto;
+}
+
+.card-section {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+/*.left-info, .right-info {*/
+/*  flex: 1;*/
+/*  min-width: 300px;*/
+/*}*/
+
+.left-info p, .right-info p {
+  margin: 10px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.left-info i, .right-info i {
+  color: #f8be00;
+  margin-right: 8px;
+}
+
+.return-card {
+  margin-top: 25px;
+  padding: 15px;
+  border-radius: 10px;
+  background: #f9f9f9;
+  border-left: 4px solid #f8be00;
+}
+
+.return-card p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+ .job-card {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            /*margin-bottom: 16px;*/
+            overflow: hidden;
+            margin:15px 0px;
+            
+        }
+
+        .job-details {
+            padding: 17px;
+    display: flex
+;
+        }
+        .right-info {
+    flex: 1;
+    /* min-width: 300px; */
+
+}
+
+        .details-row {
+                display: grid
+;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    margin:12px;
+    
+}
+ 
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .detail-icon {
+            width: 16px;
+            height: 16px;
+            background: #f59e0b;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .detail-label {
+             margin: 10px 0;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .detail-value {
+              margin: 10px 0;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .return-info {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #475569;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .return-icon {
+            width: 16px;
+            height: 16px;
+            background: #64748b;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+        }
+
+        .bids-section {
+            background: white;
+            border-radius: 8px;
+            max-height: 215px;
+    overflow-y: auto;
+
+            /*border: 1px solid #e2e8f0;*/
+         
+        }
+
+        .bids-header {
+            background: #f8fafc;
+            padding: 0px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bids-icon {
+            width: 20px;
+            height: 20px;
+            background: #1e293b;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .driver-row {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .driver-row:last-child {
+            border-bottom: none;
+        }
+
+        .driver-info {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .driver-name {
+            font-weight: 500;
+            color: #1e293b;
+            font-size: 13px;
+        }
+
+        .bid-amount {
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 13px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        /*.bid-amount:hover {*/
+        /*    background: #fef3c7;*/
+        /*    border-color: #f59e0b;*/
+        /*}*/
+
+        .bid-input {
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 13px;
+            width: 50px;
+            outline: none;
+            text-align: center;
+        }
+
+        .bid-input:focus {
+            background: white;
+            border: 1px solid #f59e0b;
+            border-radius: 3px;
+            padding: 2px 4px;
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .driver-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-accept {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-accept:hover {
+            background: #059669;
+        }
+
+        .btn-reject {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #dc2626;
+        }
+
+        .contact-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .contact-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .phone-icon {
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+        }
+
+        .whatsapp-icon {
+            width: 16px;
+            height: 16px;
+            background: #10b981;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+        }
+
+        .revised-btn {
+            background: #f59e0b;
+            color: white;
+            padding: 3px 6px;
+            border: none;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .revised-btn:hover {
+            background: #d97706;
+        }
+        .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .form-label {
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+  }
+  .form-control,
+  .form-select {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  textarea.form-control {
+    height: 60px;
+  }
+  .gap-sm {
+    gap: 0.5rem;
+  }
+
+    @media screen and (max-width: 576px) {
+        .page-wrapper {
+            padding: 10px;
+        }
+
+        #mobile_menu_opener {
+            display: block;
+            font-size: 24px;
+        }
+
+        #left_sidebar {
+            display: none;
+            height: 100vh;
+        }
+        
+        .left-sidebar .scroll-sidebar {
+            height: calc(100vh - 210px);
+        }
+
+        .mobile_menu_toggler {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .profile-greeting .cartoon-img {
+            display: none;
+        }
+
+        .profile-greeting .greeting-user p {
+            max-width: 100%;
+        }
+    }
+
+    @media screen and (max-width: 576px) {
+        
+        table {
+            text-wrap-mode: nowrap;
+        }
+
+        .mobile_menu_toggler h1 {
+            font-size: 16px;
+        }
+
+        .mobile_menu_toggler {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        #crmRenewal .modal-content, #crmUpgrade .modal-content {
+            width: 100%;
+        }
+        
+        .pricing-section .switch, .pricing-section .switch1 {
+            width: 48px;
+            height: 30px;
+        }
+
+    }
+    td {
+    font-size: 13px;
+}
+</style>
+@endsection
+@section('content')
+@php
+    $planList = null;
+    $userToken = $_COOKIE['sessionToken'] ?? '';
+    if ($userToken != '') {
+        $response = Http::withToken($userToken)->post(url('/api/packageHistory'), [
+            'countryCode' => $_COOKIE['countryCode']
+        ]);
+    } else {
+        $response = Http::post(url('/api/packageHistory'), [
+            'countryCode' => $_COOKIE['countryCode']
+        ]);
+    }
+    if ($response->successful()) {
+        $authUser = $response->json();
+        if (isset($authUser['status']) && $authUser['status'] === 'success') {
+            $planList = $authUser['data']['packageHis'] ?? null;
+        }
+    }
+
+    $i = 1;
+@endphp
+<section class="login_dashboard_section" id="main-dashboard-wrapper">
+    @include('include.sidebar')
+    <div class="page-wrapper">
+        <div class="mobile_menu_toggler">
+            <h1 class="admin_name m-0">Hello {{ $userDetails['userDetails']['name'] ?? '' }}</h1>
+            <i class="fa-solid fa-bars" id="mobile_menu_opener"></i>
+        </div>
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card profile-greeting">
+                    <div class="card-body">
+                        <div class="media">
+                            <div class="media-body">
+                                <div class="greeting-user">
+                                    <h1>Welcome back! Your dashboard is ready and waiting.</h1>
+                                    <p>You’re just a few steps away from optimizing your rides with our exclusive
+                                        packages.
+                                        Unlock special rates and enhanced features to take your business to the next
+                                        level.</p>
+                                    <a class="btn btn-outline-white_color" href="/pricing">Get Started<i
+                                            class="fa-light fa-arrow-right"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cartoon-img"><img class="img-fluid"
+                                src="{{ asset('goride/img/dashboard-welcome.svg') }}" alt=""></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-12">
+               <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                 <ul class="nav nav-tabs card-header-tabs" id="jobTabs" role="tablist">
+                <li class="nav-item">
+                  <button class="nav-link active" id="available-tab" data-bs-toggle="tab" data-bs-target="#available" type="button" role="tab"> Open Jobs </button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" id="created-tab" data-bs-toggle="tab" data-bs-target="#created" type="button" role="tab">Created Jobs</button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" id="bidding-tab" data-bs-toggle="tab" data-bs-target="#bidding" type="button" role="tab">Bidding Jobs</button>
+                </li>
+                <!--<li class="nav-item">-->
+                <!--  <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">Completed Jobs</button>-->
+                <!--</li>-->
+    
+  </ul>
+  <!-- Create Job Button -->
+ <button class="btn btn-sm view-btn d-flex align-items-center gap-1" style="font-size: 14px;" data-bs-toggle="modal" data-bs-target="#createJobModal">
+  <i class="fa-solid fa-square-plus"></i> Create Job
+</button>
+</div>
+
+
+  <div class="card-body tab-content" id="jobTabsContent">
+
+    <div class="tab-pane fade show active" id="available" role="tabpanel">
+        
+        
+    <div class="row">
+        
+   <div class="col-md-6">
+<div class="journey-card">    
+  <div class="journey-type mb-2 text-center" style="
+    position: relative;
+    top: `123;
+">
+    <span class="badge view-btn text-center px-3 py-2">
+      <i class="fas fa-route"></i> Journey Type: Return
+    </span>
+  </div>
+
+  <div class="card-section">
+    <div class="row">
+      <div class="col-6">
+        <div class="left-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>From:</strong> Perambur, Chennai</p>
+          <p><i class="fas fa-car"></i> <strong>Passenger Count:</strong> 5</p>
+          <p><i class="fas fa-calendar-alt"></i> <strong>Pickup:</strong> 2025-07-20 10:00 AM</p>
+          <p><i class="fas fa-file-invoice-dollar"></i> <strong>Charges:</strong> Batta, Toll</p>
+        
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="right-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>To:</strong> T. Nagar, Chennai</p>
+          <p><i class="fas fa-road"></i> <strong>Distance:</strong> 12 km</p>
+          <p><i class="fas fa-rupee-sign"></i> <strong class="fw-bold">Amount:</strong> ₹1200</p>
+            <p><i class="fas fa-hourglass-end"></i> <strong>Expiry:</strong> 2025-07-19 11:59 PM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="return-info mt-2">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-undo-alt"></i></div>
+      <span><strong>Return:</strong> 2025-07-21</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-clock"></i></div>
+      <span><strong>Time:</strong> 09:30 AM</span>
+    </div>
+  </div>
+<div class="place-bid-section mt-3" style="display: flex; align-items: center; gap: 10px;">
+    <input type="number" class="form-control" placeholder="Enter Bid Amount" style="max-width: 200px;" id="bidAmountInput">
+    <button class="btn view-btn" onclick="placeBid()">Place Bid</button>
+  </div>
+</div>
+
+</div>
+    <div class="col-md-6">
+<div class="journey-card">    
+  <div class="journey-type mb-2 text-center" style="
+    position: relative;
+    top: `123;
+">
+    <span class="badge view-btn text-center px-3 py-2">
+      <i class="fas fa-route"></i> Journey Type: Return
+    </span>
+  </div>
+
+  <div class="card-section">
+    <div class="row">
+      <div class="col-6">
+        <div class="left-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>From:</strong> Perambur, Chennai</p>
+          <p><i class="fas fa-car"></i> <strong>Passenger Count:</strong> 5</p>
+          <p><i class="fas fa-calendar-alt"></i> <strong>Pickup:</strong> 2025-07-20 10:00 AM</p>
+          <p><i class="fas fa-file-invoice-dollar"></i> <strong>Charges:</strong> Batta, Toll</p>
+    
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="right-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>To:</strong> T. Nagar, Chennai</p>
+          <p><i class="fas fa-road"></i> <strong>Distance:</strong> 12 km</p>
+         <p><i class="fas fa-rupee-sign"></i> <strong class="fw-bold">Amount:</strong> ₹1200</p>
+                <p><i class="fas fa-hourglass-end"></i> <strong>Expiry:</strong> 2025-07-19 11:59 PM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="return-info mt-2">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-undo-alt"></i></div>
+      <span><strong>Return:</strong> 2025-07-21</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-clock"></i></div>
+      <span><strong>Time:</strong> 09:30 AM</span>
+    </div>
+  </div>
+<div class="place-bid-section mt-3" style="display: flex; align-items: center; gap: 10px;">
+    <input type="number" class="form-control" placeholder="Enter Bid Amount" style="max-width: 200px;" id="bidAmountInput">
+    <button class="btn view-btn" onclick="placeBid()">Place Bid</button>
+  </div>
+</div>
+
+    </div>
+     <div class="col-md-6">
+<div class="journey-card">    
+  <div class="journey-type mb-2 text-center" style="
+    position: relative;
+    top: `123;
+">
+    <span class="badge view-btn text-center px-3 py-2">
+      <i class="fas fa-route"></i> Journey Type: Return
+    </span>
+  </div>
+
+  <div class="card-section">
+    <div class="row">
+      <div class="col-6">
+        <div class="left-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>From:</strong> Perambur, Chennai</p>
+          <p><i class="fas fa-car"></i> <strong>Passenger Count:</strong> 5</p>
+          <p><i class="fas fa-calendar-alt"></i> <strong>Pickup:</strong> 2025-07-20 10:00 AM</p>
+          <p><i class="fas fa-file-invoice-dollar"></i> <strong>Charges:</strong> Batta, Toll</p>
+        
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="right-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>To:</strong> T. Nagar, Chennai</p>
+          <p><i class="fas fa-road"></i> <strong>Distance:</strong> 12 km</p>
+         <p><i class="fas fa-rupee-sign"></i> <strong class="fw-bold">Amount:</strong> ₹1200</p>
+            <p><i class="fas fa-hourglass-end"></i> <strong>Expiry:</strong> 2025-07-19 11:59 PM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="return-info mt-2">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-undo-alt"></i></div>
+      <span><strong>Return:</strong> 2025-07-21</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-clock"></i></div>
+      <span><strong>Time:</strong> 09:30 AM</span>
+    </div>
+  </div>
+<div class="place-bid-section mt-3" style="display: flex; align-items: center; gap: 10px;">
+    <input type="number" class="form-control" placeholder="Enter Bid Amount" style="max-width: 200px;" id="bidAmountInput">
+    <button class="btn view-btn" onclick="placeBid()">Place Bid</button>
+  </div>
+</div>
+
+</div>
+    <div class="col-md-6">
+<div class="journey-card">    
+  <div class="journey-type mb-2 text-center" style="
+    position: relative;
+    top: `123;
+">
+    <span class="badge view-btn text-center px-3 py-2">
+      <i class="fas fa-route"></i> Journey Type: Return
+    </span>
+  </div>
+
+  <div class="card-section">
+    <div class="row">
+      <div class="col-6">
+        <div class="left-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>From:</strong> Perambur, Chennai</p>
+          <p><i class="fas fa-car"></i> <strong>Passenger Count:</strong> 5</p>
+          <p><i class="fas fa-calendar-alt"></i> <strong>Pickup:</strong> 2025-07-20 10:00 AM</p>
+          <p><i class="fas fa-file-invoice-dollar"></i> <strong>Charges:</strong> Batta, Toll</p>
+         
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="right-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>To:</strong> T. Nagar, Chennai</p>
+          <p><i class="fas fa-road"></i> <strong>Distance:</strong> 12 km</p>
+          <p><i class="fas fa-rupee-sign"></i> <strong class="fw-bold">Amount:</strong> ₹1200</p>
+           <p><i class="fas fa-hourglass-end"></i> <strong>Expiry:</strong> 2025-07-19 11:59 PM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="return-info mt-2">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-undo-alt"></i></div>
+      <span><strong>Return:</strong> 2025-07-21</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="return-icon"><i class="fas fa-clock"></i></div>
+      <span><strong>Time:</strong> 09:30 AM</span>
+    </div>
+  </div>
+<div class="place-bid-section mt-3" style="display: flex; align-items: center; gap: 10px;">
+    <input type="number" class="form-control" placeholder="Enter Bid Amount" style="max-width: 200px;" id="bidAmountInput">
+    <button class="btn view-btn" onclick="placeBid()">Place Bid</button>
+  </div>
+</div>
+
+    </div>
+    
+     </div>
+     
+    </div>
+    
+    <div class="tab-pane fade " id="created" role="tabpanel">
+        <div class="row">
+           <div class="col-12">
+        <!--  <div class="job-card">-->
+        <!--    <div class="job-details">-->
+        <!--        <div class="details-row">-->
+        <!--            <div class="right-info">-->
+        <!--              <i class="fas fa-map-marker-alt"></i>-->
+        <!--                <span class="detail-label"><strong>From:</strong></span>-->
+        <!--                <span class="detail-value">Perambur, Chennai</span>-->
+        <!--            </div>-->
+        <!--            <div class="right-info">-->
+        <!--              <i class="fas fa-map-marker-alt"></i>-->
+        <!--                <span class="detail-label"><strong>To:</strong></span>-->
+        <!--                <span class="detail-value">T. Nagar, Chennai</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+                
+        <!--        <div class="details-row">-->
+        <!--            <div class="right-info">-->
+        <!--              <i class="fas fa-car"></i>-->
+        <!--                <span class="detail-label"><strong>Vehicle:</strong></span>-->
+        <!--                <span class="detail-value">4 Seater</span>-->
+        <!--            </div>-->
+        <!--            <div class="right-info">-->
+        <!--             <i class="fas fa-random"></i>-->
+        <!--                <span class="detail-label"><strong>Journey:</strong></span>-->
+        <!--                <span class="detail-value">Return</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+                
+        <!--        <div class="details-row">-->
+        <!--            <div class="right-info">-->
+        <!--              <i class="fas fa-calendar-alt"></i>-->
+        <!--                <span class="detail-label"><strong>Pickup:</strong></span>-->
+        <!--                <span class="detail-value">2025-07-20 10:00 AM</span>-->
+        <!--            </div>-->
+        <!--            <div class="right-info">-->
+        <!--               <i class="fas fa-road"></i>-->
+        <!--                <span class="detail-label"><strong>Distance:</strong></span>-->
+        <!--                <span class="detail-value">12 km</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+                
+        <!--        <div class="details-row">-->
+        <!--            <div class="right-info">-->
+        <!--               <i class="fas fa-file-invoice-dollar"></i>-->
+        <!--                <span class="detail-label"><strong>Charges:</strong></span>-->
+        <!--                <span class="detail-value">Batta, Toll</span>-->
+        <!--            </div>-->
+        <!--            <div class="right-info">-->
+        <!--             <i class="fas fa-rupee-sign"></i>-->
+        <!--                <span class="detail-label"><strong>Amount:</strong></span>-->
+        <!--                <span class="detail-value">₹1200</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+                
+        <!--        <div class="details-row">-->
+        <!--            <div class="right-info">-->
+        <!--               <i class="fas fa-hourglass-end"></i>-->
+        <!--                <span class="detail-label"><strong>Expiry:</strong></span>-->
+        <!--                <span class="detail-value">2025-07-19 11:59 PM</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+                
+        <!--        <div class="return-info">-->
+        <!--            <div style="display: flex; align-items: center; gap: 6px;">-->
+        <!--              <i class="fas fa-undo-alt"></i>-->
+        <!--                <span><strong>Return:</strong> 2025-07-21</span>-->
+        <!--            </div>-->
+        <!--            <div style="display: flex; align-items: center; gap: 6px;">-->
+        <!--               <i class="fas fa-clock"></i>-->
+        <!--                <span><strong>Time:</strong> 09:30 AM</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+        <!--    </div>-->
+            
+        <!--     <div class="bids-section mt-2">-->
+        <!--    <div class="bids-header">-->
+        <!--        <div class="bids-icon"><i class="fas fa-users"></i></div>-->
+        <!--        <span>Driver Bids</span>-->
+        <!--    </div>-->
+            
+        <!--    <div class="driver-row">-->
+        <!--        <div class="driver-info">-->
+        <!--            <span class="driver-name">Ramesh Kumar</span>-->
+        <!--            <div class="bid-amount">-->
+        <!--                <span>₹</span>-->
+        <!--                <input type="number" class="bid-input" value="460" onchange="updateBid(this, 'Ramesh Kumar')" min="1">-->
+        <!--                <span class="dropdown-arrow">▼</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+        <!--        <div class="driver-actions">-->
+        <!--            <button class="btn btn-accept" onclick="acceptBid('Ramesh Kumar')">Accept</button>-->
+        <!--            <button class="btn btn-reject" onclick="rejectBid('Ramesh Kumar')">Reject</button>-->
+        <!--            <button class="contact-btn" onclick="makeCall('Ramesh Kumar')" title="Call">-->
+        <!--                <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>-->
+        <!--            </button>-->
+        <!--            <button class="contact-btn" onclick="openWhatsApp('Ramesh Kumar')" title="WhatsApp">-->
+        <!--                <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>-->
+        <!--            </button>-->
+        <!--            <button class="revised-btn" onclick="sendRevised('Ramesh Kumar')">Revised Request</button>-->
+        <!--        </div>-->
+        <!--    </div>-->
+            
+        <!--    <div class="driver-row">-->
+        <!--        <div class="driver-info">-->
+        <!--            <span class="driver-name">Selva Raj</span>-->
+        <!--            <div class="bid-amount">-->
+        <!--                <span>₹</span>-->
+        <!--                <input type="number" class="bid-input" value="440" onchange="updateBid(this, 'Selva Raj')" min="1">-->
+        <!--                <span class="dropdown-arrow">▼</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+        <!--        <div class="driver-actions">-->
+        <!--            <button class="btn btn-accept" onclick="acceptBid('Selva Raj')">Accept</button>-->
+        <!--            <button class="btn btn-reject" onclick="rejectBid('Selva Raj')">Reject</button>-->
+        <!--            <button class="contact-btn" onclick="makeCall('Selva Raj')" title="Call">-->
+        <!--                <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>-->
+        <!--            </button>-->
+        <!--            <button class="contact-btn" onclick="openWhatsApp('Selva Raj')" title="WhatsApp">-->
+        <!--                <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>-->
+        <!--            </button>-->
+        <!--            <button class="revised-btn" onclick="sendRevised('Selva Raj')">Revised Request</button>-->
+        <!--        </div>-->
+        <!--    </div>-->
+            
+        <!--    <div class="driver-row">-->
+        <!--        <div class="driver-info">-->
+        <!--            <span class="driver-name">Karthik S</span>-->
+        <!--            <div class="bid-amount">-->
+        <!--                <span>₹</span>-->
+        <!--                <input type="number" class="bid-input" value="470" onchange="updateBid(this, 'Karthik S')" min="1">-->
+        <!--                <span class="dropdown-arrow">▼</span>-->
+        <!--            </div>-->
+        <!--        </div>-->
+        <!--        <div class="driver-actions">-->
+        <!--            <button class="btn btn-accept" onclick="acceptBid('Karthik S')">Accept</button>-->
+        <!--            <button class="btn btn-reject" onclick="rejectBid('Karthik S')">Reject</button>-->
+        <!--            <button class="contact-btn" onclick="makeCall('Karthik S')" title="Call">-->
+        <!--                <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>-->
+        <!--            </button>-->
+        <!--            <button class="contact-btn" onclick="openWhatsApp('Karthik S')" title="WhatsApp">-->
+        <!--                <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>-->
+        <!--            </button>-->
+        <!--            <button class="revised-btn" onclick="sendRevised('Karthik S')">Revised Request</button>-->
+        <!--        </div>-->
+        <!--    </div>-->
+        <!--</div>-->
+        <!--</div>-->
+        <div class="job-card">
+            <div class="job-details">
+                <div class="details-row">
+                    <div class="right-info">
+                      <i class="fas fa-map-marker-alt"></i>
+                        <span class="detail-label"><strong>From:</strong></span>
+                        <span class="detail-value">Perambur, Chennai</span>
+                    </div>
+                    <div class="right-info">
+                      <i class="fas fa-map-marker-alt"></i>
+                        <span class="detail-label"><strong>To:</strong></span>
+                        <span class="detail-value">T. Nagar, Chennai</span>
+                    </div>
+                </div>
+                
+                <div class="details-row">
+                    <div class="right-info">
+                      <i class="fas fa-car"></i>
+                        <span class="detail-label"><strong>Vehicle:</strong></span>
+                        <span class="detail-value">4 Seater</span>
+                    </div>
+                    <div class="right-info">
+                     <i class="fas fa-random"></i>
+                        <span class="detail-label"><strong>Journey:</strong></span>
+                        <span class="detail-value">Return</span>
+                    </div>
+                </div>
+                
+                <div class="details-row">
+                    <div class="right-info">
+                      <i class="fas fa-calendar-alt"></i>
+                        <span class="detail-label"><strong>Pickup:</strong></span>
+                        <span class="detail-value">2025-07-20 10:00 AM</span>
+                    </div>
+                    <div class="right-info">
+                       <i class="fas fa-road"></i>
+                        <span class="detail-label"><strong>Distance:</strong></span>
+                        <span class="detail-value">12 km</span>
+                    </div>
+                </div>
+                
+                <div class="details-row">
+                    <div class="right-info">
+                       <i class="fas fa-file-invoice-dollar"></i>
+                        <span class="detail-label"><strong>Charges:</strong></span>
+                        <span class="detail-value">Batta, Toll</span>
+                    </div>
+                    <div class="right-info">
+                     <i class="fas fa-rupee-sign"></i>
+                        <span class="detail-label"><strong>Amount:</strong></span>
+                        <span class="detail-value">₹1200</span>
+                    </div>
+                </div>
+                
+                <div class="details-row">
+                    <div class="right-info">
+                       <i class="fas fa-hourglass-end"></i>
+                        <span class="detail-label"><strong>Expiry:</strong></span>
+                        <span class="detail-value">2025-07-19 11:59 PM</span>
+                    </div>
+                </div>
+                
+                
+            </div>
+            
+             <div class="bids-section">
+            <div class="bids-header">
+                <div class="bids-icon"><i class="fas fa-users"></i></div>
+                <span>Driver Bids</span>
+            </div>
+            
+            <div class="driver-row">
+                <div class="driver-info">
+                    <span class="driver-name">Ramesh Kumar</span>
+                    <div class="bid-amount">
+                        <span>₹</span>
+                        <input type="number" class="bid-input" value="460" onchange="updateBid(this, 'Ramesh Kumar')" min="1">
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                </div>
+                <div class="driver-actions">
+                    <button class="btn btn-accept" onclick="acceptBid('Ramesh Kumar')">Accept</button>
+                    <button class="btn btn-reject" onclick="rejectBid('Ramesh Kumar')">Reject</button>
+                    <button class="contact-btn" onclick="makeCall('Ramesh Kumar')" title="Call">
+                        <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>
+                    </button>
+                    <button class="contact-btn" onclick="openWhatsApp('Ramesh Kumar')" title="WhatsApp">
+                        <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    </button>
+                    <button class="revised-btn" onclick="sendRevised('Ramesh Kumar')">Revised Request</button>
+                </div>
+            </div>
+            
+            <div class="driver-row">
+                <div class="driver-info">
+                    <span class="driver-name">Selva Raj</span>
+                    <div class="bid-amount">
+                        <span>₹</span>
+                        <input type="number" class="bid-input" value="440" onchange="updateBid(this, 'Selva Raj')" min="1">
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                </div>
+                <div class="driver-actions">
+                    <button class="btn btn-accept" onclick="acceptBid('Selva Raj')">Accept</button>
+                    <button class="btn btn-reject" onclick="rejectBid('Selva Raj')">Reject</button>
+                    <button class="contact-btn" onclick="makeCall('Selva Raj')" title="Call">
+                        <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>
+                    </button>
+                    <button class="contact-btn" onclick="openWhatsApp('Selva Raj')" title="WhatsApp">
+                        <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    </button>
+                    <button class="revised-btn" onclick="sendRevised('Selva Raj')">Revised Request</button>
+                </div>
+            </div>
+            
+            <div class="driver-row">
+                <div class="driver-info">
+                    <span class="driver-name">Karthik S</span>
+                    <div class="bid-amount">
+                        <span>₹</span>
+                        <input type="number" class="bid-input" value="470" onchange="updateBid(this, 'Karthik S')" min="1">
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                </div>
+                <div class="driver-actions">
+                    <button class="btn btn-accept" onclick="acceptBid('Karthik S')">Accept</button>
+                    <button class="btn btn-reject" onclick="rejectBid('Karthik S')">Reject</button>
+                    <button class="contact-btn" onclick="makeCall('Karthik S')" title="Call">
+                        <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>
+                    </button>
+                    <button class="contact-btn" onclick="openWhatsApp('Karthik S')" title="WhatsApp">
+                        <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    </button>
+                    <button class="revised-btn" onclick="sendRevised('Karthik S')">Revised Request</button>
+                </div>
+            </div>
+            
+            
+            <div class="driver-row">
+                <div class="driver-info">
+                    <span class="driver-name">Ramesh Kumar</span>
+                    <div class="bid-amount">
+                        <span>₹</span>
+                        <input type="number" class="bid-input" value="460" onchange="updateBid(this, 'Ramesh Kumar')" min="1">
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                </div>
+                <div class="driver-actions">
+                    <button class="btn btn-accept" onclick="acceptBid('Ramesh Kumar')">Accept</button>
+                    <button class="btn btn-reject" onclick="rejectBid('Ramesh Kumar')">Reject</button>
+                    <button class="contact-btn" onclick="makeCall('Ramesh Kumar')" title="Call">
+                        <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>
+                    </button>
+                    <button class="contact-btn" onclick="openWhatsApp('Ramesh Kumar')" title="WhatsApp">
+                        <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    </button>
+                    <button class="revised-btn" onclick="sendRevised('Ramesh Kumar')">Revised Request</button>
+                </div>
+            </div>
+            
+            <div class="driver-row">
+                <div class="driver-info">
+                    <span class="driver-name">Selva Raj</span>
+                    <div class="bid-amount">
+                        <span>₹</span>
+                        <input type="number" class="bid-input" value="440" onchange="updateBid(this, 'Selva Raj')" min="1">
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                </div>
+                <div class="driver-actions">
+                    <button class="btn btn-accept" onclick="acceptBid('Selva Raj')">Accept</button>
+                    <button class="btn btn-reject" onclick="rejectBid('Selva Raj')">Reject</button>
+                    <button class="contact-btn" onclick="makeCall('Selva Raj')" title="Call">
+                        <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>
+                    </button>
+                    <button class="contact-btn" onclick="openWhatsApp('Selva Raj')" title="WhatsApp">
+                        <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    </button>
+                    <button class="revised-btn" onclick="sendRevised('Selva Raj')">Revised Request</button>
+                </div>
+            </div>
+            
+            <div class="driver-row">
+                <div class="driver-info">
+                    <span class="driver-name">Karthik S</span>
+                    <div class="bid-amount">
+                        <span>₹</span>
+                        <input type="number" class="bid-input" value="470" onchange="updateBid(this, 'Karthik S')" min="1">
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                </div>
+                <div class="driver-actions">
+                    <button class="btn btn-accept" onclick="acceptBid('Karthik S')">Accept</button>
+                    <button class="btn btn-reject" onclick="rejectBid('Karthik S')">Reject</button>
+                    <button class="contact-btn" onclick="makeCall('Karthik S')" title="Call">
+                        <div class="phone-icon"><i class="fa-solid fa-phone"></i></div>
+                    </button>
+                    <button class="contact-btn" onclick="openWhatsApp('Karthik S')" title="WhatsApp">
+                        <div class="whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    </button>
+                    <button class="revised-btn" onclick="sendRevised('Karthik S')">Revised Request</button>
+                </div>
+            </div>
+        </div>
+        </div>
+    
+       
+           </div>
+                
+<!--           <div class="col-6">-->
+<!--           <div class="journey-card border p-4 shadow-sm rounded bg-white">-->
+<!--  <div class="card-section">-->
+<!--    <div class="row">-->
+      <!-- Left Column -->
+<!--      <div class="col-md-6 mb-3">-->
+<!--        <div class="left-info">-->
+<!--          <p><i class="fas fa-map-marker-alt me-2"></i> <strong>From:</strong> Perambur, Chennai</p>-->
+<!--          <p><i class="fas fa-car me-2"></i> <strong>Vehicle:</strong> 4 Seater</p>-->
+<!--          <p><i class="fas fa-calendar-alt me-2"></i> <strong>Pickup:</strong> 2025-07-20 10:00 AM</p>-->
+<!--          <p><i class="fas fa-file-invoice-dollar me-2"></i> <strong>Charges:</strong> Batta, Toll</p>-->
+<!--          <p><i class="fas fa-hourglass-end me-2"></i> <strong>Expiry:</strong> 2025-07-19 11:59 PM</p>-->
+<!--        </div>-->
+<!--      </div>-->
+
+      <!-- Right Column -->
+<!--      <div class="col-md-6 mb-3">-->
+<!--        <div class="right-info">-->
+<!--          <p><i class="fas fa-map-marker-alt me-2"></i> <strong>To:</strong> T. Nagar, Chennai</p>-->
+<!--          <p><i class="fas fa-random me-2"></i> <strong>Journey:</strong> Return</p>-->
+<!--          <p><i class="fas fa-road me-2"></i> <strong>Distance:</strong> 12 km</p>-->
+<!--          <p><i class="fas fa-rupee-sign me-2"></i> <strong>Amount:</strong> ₹1200</p>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+
+  <!-- Return Info (Inline) -->
+<!--  <div class="return-info p-3 mt-2 mb-4 border rounded bg-light d-flex align-items-center justify-content-between">-->
+<!--    <div><i class="fas fa-undo-alt me-2"></i><strong>Return:</strong></div>-->
+<!--    <div><i class="fas fa-calendar-day me-2"></i> Date: 2025-07-21</div>-->
+<!--    <div><i class="fas fa-clock me-2"></i> Time: 09:30 AM</div>-->
+<!--  </div>-->
+
+  <!-- Driver Bids Table -->
+<!--  <div class="driver-bids">-->
+<!--    <h5 class="mb-3"><i class="fas fa-users me-2"></i>Driver Bids</h5>-->
+<!--    <div class="table-responsive">-->
+<!--      <table class="table table-bordered text-center align-middle shadow-sm mb-0">-->
+<!--        <thead class="table-primary">-->
+<!--          <tr>-->
+<!--            <th>#</th>-->
+<!--            <th>Driver Name</th>-->
+<!--            <th>Bid Amount</th>-->
+<!--            <th>Action</th>-->
+<!--          </tr>-->
+<!--        </thead>-->
+<!--        <tbody>-->
+<!--          <tr>-->
+<!--            <td>1</td>-->
+<!--            <td>Ramesh Kumar</td>-->
+<!--            <td>₹460</td>-->
+<!--            <td>-->
+<!--              <button class="btn btn-success btn-sm me-1">Accept</button>-->
+<!--              <button class="btn btn-danger btn-sm me-1">Reject</button>-->
+<!--              <a href="tel:+919876543210" class="btn btn-outline-primary btn-sm">-->
+<!--                <i class="fa-solid fa-phone"></i>-->
+<!--              </a>-->
+<!--            </td>-->
+<!--          </tr>-->
+<!--          <tr>-->
+<!--            <td>2</td>-->
+<!--            <td>Selva Raj</td>-->
+<!--            <td>₹440</td>-->
+<!--            <td>-->
+<!--              <button class="btn btn-success btn-sm me-1">Accept</button>-->
+<!--              <button class="btn btn-danger btn-sm me-1">Reject</button>-->
+<!--              <a href="tel:+919812345678" class="btn btn-outline-primary btn-sm">-->
+<!--                <i class="fa-solid fa-phone"></i>-->
+<!--              </a>-->
+<!--            </td>-->
+<!--          </tr>-->
+<!--          <tr>-->
+<!--            <td>3</td>-->
+<!--            <td>Karthik S</td>-->
+<!--            <td>₹470</td>-->
+<!--            <td>-->
+<!--              <button class="btn btn-success btn-sm me-1">Accept</button>-->
+<!--              <button class="btn btn-danger btn-sm me-1">Reject</button>-->
+<!--              <a href="tel:+919800112233" class="btn btn-outline-primary btn-sm">-->
+<!--                <i class="fa-solid fa-phone"></i>-->
+<!--              </a>-->
+<!--            </td>-->
+<!--          </tr>-->
+<!--        </tbody>-->
+<!--      </table>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
+<!--           </div>-->
+        </div>
+    </div>
+        
+   
+    <div class="tab-pane fade" id="bidding" role="tabpanel">
+        <div class="row">
+            <div class="col-6">
+            <div class="journey-card">
+  <div class="card-section">
+   <div class="row">
+      <div class="col-6">
+        <div class="left-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>From:</strong> Perambur, Chennai</p>
+          <p><i class="fas fa-rupee-sign"></i> <strong>Base Amount:</strong> ₹1200</p>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="right-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>To:</strong> T. Nagar, Chennai</p>
+          <p><i class="fas fa-rupee-sign"></i> <strong>Bid Amount:</strong> ₹1500</p>
+        </div>
+      </div><div class="text-center">
+    <div> <strong>status:</strong>
+      <span class="badge bg-success">Completed</span></div>
+    
+    </div>
+  </div>
+
+
+
+
+            </div>
+        </div>
+    </div>
+    </div>
+
+ 
+  <!--  <div class="tab-pane fade" id="completed" role="tabpanel">-->
+  <!-- <div class="table-responsive">-->
+  <!--  <table class="align-middle mb-0 table table-hover">-->
+  <!--    <thead class="table-light text-center">-->
+  <!--      <tr>-->
+  <!--        <th>S.No</th>-->
+  <!--        <th>Pickup Location</th>-->
+  <!--        <th>Drop Location</th>-->
+  <!--        <th>Base Amount</th>-->
+  <!--        <th>Bid Amount</th>-->
+  <!--        <th>Status</th>-->
+  <!--        <th>Details</th>-->
+  <!--      </tr>-->
+  <!--    </thead>-->
+  <!--    <tbody class="text-center">-->
+  <!--      <tr>-->
+  <!--        <td>1</td>-->
+  <!--        <td>Chennai</td>-->
+  <!--        <td>Coimbatore</td>-->
+  <!--        <td>₹5,000</td>-->
+  <!--        <td>₹5,800</td>-->
+  <!--        <td>-->
+  <!--          <button class="btn btn-sm btn-success">Completed</button>-->
+      
+  <!--        </td>-->
+  <!--        <td>-->
+  <!--          <button class="btn btn-sm view-btn" data-bs-toggle="modal" data-bs-target="#completedModal1">-->
+  <!--            View-->
+  <!--          </button>-->
+  <!--        </td>-->
+  <!--      </tr>-->
+  <!--      <tr>-->
+  <!--        <td>2</td>-->
+  <!--        <td>Madurai</td>-->
+  <!--        <td>Salem</td>-->
+  <!--        <td>₹3,000</td>-->
+  <!--        <td>₹3,400</td>-->
+  <!--        <td>-->
+        
+  <!--          <button class="btn btn-sm btn-success">Completed</button>-->
+       
+  <!--        </td>-->
+  <!--        <td>-->
+  <!--          <button class="btn btn-sm view-btn" data-bs-toggle="modal" data-bs-target="#completedModal2">-->
+  <!--            View-->
+  <!--          </button>-->
+  <!--        </td>-->
+  <!--      </tr>-->
+  <!--        <tr>-->
+  <!--        <td>3</td>-->
+  <!--        <td>Trichy</td>-->
+  <!--        <td>Chennai</td>-->
+  <!--        <td>₹3,000</td>-->
+  <!--        <td>₹3,400</td>-->
+  <!--        <td>-->
+           
+  <!--          <button class="btn btn-sm btn-success">Completed</button>-->
+  <!--        </td>-->
+  <!--        <td>-->
+  <!--          <button class="btn btn-sm view-btn" data-bs-toggle="modal" data-bs-target="#completedModal3">-->
+  <!--            View-->
+  <!--          </button>-->
+  <!--        </td>-->
+  <!--      </tr>-->
+  <!--    </tbody>-->
+  <!--  </table>-->
+  <!--</div>-->
+  <!--  </div>-->
+
+   </div>
+</div>
+
+            </div>
+        </div>
+       
+    </div>
+</section>
+<!-- Modal -->
+<div class="modal fade" id="createJobModal" tabindex="-1" aria-labelledby="createJobLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content p-3">
+      <div class="modal-header d-flex justify-content-center position-relative">
+        <h5 class="modal-title" id="createJobLabel">Create Job</h5>
+        <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-3">
+        <form id="journeyForm">
+
+          <!-- Journey Type -->
+          <div class="mb-2 d-flex align-items-center">
+            <label class="form-label me-3 mb-0">Journey Type:</label>
+            <div class="form-check me-3">
+              <input class="form-check-input" type="radio" name="tripType" id="oneWay" value="oneway" checked>
+              <label class="form-check-label" for="oneWay">One Way</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="tripType" id="roundTrip" value="roundtrip">
+              <label class="form-check-label" for="roundTrip">Round Trip</label>
+            </div>
+          </div>
+
+          <!-- From, To, Distance -->
+          <div class="row mb-2">
+            <div class="col-md-4">
+              <input type="text" id="fromPlace" class="form-control p-2" placeholder="From">
+            </div>
+            <div class="col-md-4">
+              <input type="text" id="toPlace" class="form-control p-2" placeholder="To">
+            </div>
+            <div class="col-md-4">
+              <input type="number" id="distance" class="form-control p-2" placeholder="Distance (km)" readonly>
+            </div>
+          </div>
+
+          <!-- Pickup, Drop, Passenger -->
+          <div class="row mb-2">
+            <div class="col-md-4">
+              <label>Pickup Date & Time</label>
+              <input type="datetime-local" id="pickupDate" class="form-control p-2">
+            </div>
+            <div class="col-md-4 d-none" id="dropSection">
+              <label>Drop Date & Time</label>
+              <input type="datetime-local" id="dropDate" class="form-control p-2">
+            </div>
+            <div class="col-md-4">
+              <label>Passenger Count</label>
+              <select id="passengerCount" class="form-select p-2">
+                <option value="">Select</option>
+                <script>
+                  for (let i = 1; i <= 54; i++) {
+                    document.write(`<option value="${i}">${i}</option>`);
+                  }
+                </script>
+              </select>
+            </div>
+          </div>
+
+          <!-- Additional Charges -->
+          <div class="mb-2">
+            <label class="form-label fw-bold">Additional Charges (₹)</label>
+            <div class="row">
+              <div class="col-md-4">
+                <input type="number" class="form-control p-2" id="bata" placeholder="Bata">
+              </div>
+              <div class="col-md-4">
+                <input type="number" class="form-control p-2" id="toll" placeholder="Toll">
+              </div>
+              <div class="col-md-4">
+                <input type="number" class="form-control p-2" id="parking" placeholder="Parking">
+              </div>
+            </div>
+          </div>
+
+          <!-- Expiry and Amounts -->
+          <div class="row">
+            
+            
+            <div class="col-8">
+  <label>Expected Amount (₹)</label>
+  <input type="text" id="marketedPrice" class="form-control p-2">
+  <small class="form-text text-muted mt-1">The expected marketed price is ₹500.</small>
+</div>
+
+            <div class="col-4">
+              <label>Expiry Date &amp; Time</label>
+              <input type="datetime-local" id="expiryDate" class="form-control p-2">
+            </div>
+          </div>
+
+          <!-- Remarks -->
+          <div class="mb-2">
+            <label>Remarks</label>
+            <textarea class="form-control p-2" rows="2" placeholder="Enter remarks..."></textarea>
+          </div>
+
+          <!-- Submit -->
+          <div class="text-center">
+            <button type="button" id="createJobBtn" class="btn view-btn p-2" style="font-size: 13px;">Create Job</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+ function placeBid() {
+    const bidAmount = document.getElementById('bidAmountInput').value;
+    if (bidAmount && bidAmount > 0) {
+      alert('Bid placed successfully!');
+    } else {
+      alert('Please enter a valid bid amount.');
+    }
+  } function placeBid() {
+    const bidAmount = document.getElementById('bidAmountInput').value;
+    if (bidAmount && bidAmount > 0) {
+      alert('Bid placed successfully!');
+    } else {
+      alert('Please enter a valid bid amount.');
+    }
+  }
+function updateBid(input, driverName) {
+            const newAmount = input.value;
+            console.log(`${driverName}'s bid updated to ₹${newAmount}`);
+            
+            // Visual feedback
+            input.style.background = '#fef3c7';
+            setTimeout(() => {
+                input.style.background = 'transparent';
+            }, 500);
+            
+            // You can add your bid update logic here
+            // For example, send to server or update local storage
+        }
+
+        function acceptBid(driver) {
+            const driverRow = Array.from(document.querySelectorAll('.driver-name')).find(el => el.textContent === driver).closest('.driver-row');
+            const bidAmount = driverRow.querySelector('.bid-input').value;
+            
+            if (confirm(`Accept bid from ${driver} for ₹${bidAmount}?`)) {
+                alert(`✅ Accepted ${driver}'s bid of ₹${bidAmount}`);
+                // Add your accept logic here
+            }
+        }
+
+        function rejectBid(driver) {
+            if (confirm(`Reject bid from ${driver}?`)) {
+                alert(`❌ Rejected ${driver}'s bid`);
+                // Add your reject logic here
+            }
+        }
+
+        function makeCall(driver) {
+            alert(`📞 Calling ${driver}...`);
+            // Add your call logic here
+        }
+
+        function openWhatsApp(driver) {
+            alert(`💬 Opening WhatsApp with ${driver}...`);
+            // Add your WhatsApp logic here
+        }
+
+        function sendRevised(driver) {
+            const driverRow = Array.from(document.querySelectorAll('.driver-name')).find(el => el.textContent === driver).closest('.driver-row');
+            const currentBid = driverRow.querySelector('.bid-input').value;
+            const newAmount = prompt(`Current bid: ₹${currentBid}\nEnter revised amount for ${driver}:`);
+            
+            if (newAmount && newAmount !== currentBid) {
+                driverRow.querySelector('.bid-input').value = newAmount;
+                alert(`📝 Sent revised request to ${driver}: ₹${newAmount}`);
+                updateBid(driverRow.querySelector('.bid-input'), driver);
+            }
+        }
+
+        // Add visual feedback when clicking on bid amounts
+        document.querySelectorAll('.bid-amount').forEach(bidAmount => {
+            bidAmount.addEventListener('click', function() {
+                const input = this.querySelector('.bid-input');
+                input.focus();
+                input.select();
+            });
+        });
+
+        // Prevent form submission on Enter key
+        document.querySelectorAll('.bid-input').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.blur();
+                }
+            });
+        });
+  const tripRadios = document.querySelectorAll('input[name="tripType"]');
+  const dropSection = document.getElementById("dropSection");
+  const from = document.getElementById("fromPlace");
+  const to = document.getElementById("toPlace");
+  const distance = document.getElementById("distance");
+  const passengerCount = document.getElementById("passengerCount");
+  const expectedAmount = document.getElementById("expectedAmount");
+  const marketedPrice = document.getElementById("marketedPrice");
+  const pickupDate = document.getElementById("pickupDate");
+  const expiryDate = document.getElementById("expiryDate");
+  const bata = document.getElementById("bata");
+  const toll = document.getElementById("toll");
+  const parking = document.getElementById("parking");
+
+  const ratePerKmPerPerson = 10;
+
+  function calculateDistance() {
+    if (from.value && to.value) {
+      let dummyDistance = Math.floor(Math.random() * 100) + 50; // Simulate distance
+      distance.value = dummyDistance;
+      updateAmount();
+    }
+  }
+
+  function updateAmount() {
+    let dist = parseInt(distance.value) || 0;
+    let count = parseInt(passengerCount.value) || 0;
+
+    let totalExtra = (parseInt(bata.value) || 0) +
+                     (parseInt(toll.value) || 0) +
+                     (parseInt(parking.value) || 0);
+
+    let total = dist * count * ratePerKmPerPerson + totalExtra;
+    expectedAmount.value = isNaN(total) ? '' : total.toFixed(2);
+  }
+
+  tripRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (radio.value === "roundtrip" && radio.checked) {
+        dropSection.classList.remove("d-none");
+      } else {
+        dropSection.classList.add("d-none");
+      }
+    });
+  });
+
+  [from, to].forEach(el => el.addEventListener("input", calculateDistance));
+  [passengerCount, distance, bata, toll, parking].forEach(el => el.addEventListener("input", updateAmount));
+
+  pickupDate.addEventListener("change", () => {
+    const pickup = pickupDate.value;
+    if (pickup) {
+      expiryDate.max = pickup;
+
+      // Optional: clear expiry if it's after pickup
+      if (expiryDate.value && expiryDate.value > pickup) {
+        expiryDate.value = '';
+      }
+    }
+  });
+
+  document.getElementById("createJobBtn").addEventListener("click", function () {
+    alert("Created successfully!");
+  });
+</script>
+
+
+<div class="modal fade" id="detailsModal1" tabindex="-1" aria-labelledby="detailsModalLabel1" aria-hidden="true">
+  <div class="modal-dialog modal-xl"> <!-- Made modal wider -->
+    <div class="modal-content position-relative">
+
+      <!-- Close Button Top Right -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          <div class="modal-header d-flex justify-content-between align-items-center">
+  <!-- Left: Title -->
+  <div class="flex-grow-1">
+    <h5 class="modal-title mb-0" id="jobDetailsLabel">Placed Bid Details</h5>
+  </div>
+
+  <!-- Center: Status -->
+  <div class="text-center flex-grow-1">
+    <span class="badge bg-success p-2">Status: Completed</span>
+  </div>
+
+  <!-- Right: Close Button -->
+  <div class="text-end">
+    <button type="button"  data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+</div>
+
+     <div class="modal-body p-3">
+        <!-- Job Info Section -->
+        <div class="row g-3 border-bottom pb-3 mb-4">
+          <div class="col-md-4">
+            <strong>From:</strong>
+            <p class="mb-0">Perambur, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>To:</strong>
+            <p class="mb-0">T. Nagar, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>Vehicle Type:</strong>
+            <p class="mb-0">4 Seater</p>
+          </div>
+           <div class="col-md-4">
+            <strong>Journey Type</strong>
+            <p class="mb-0">Return</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Pickup:</strong>
+            <p class="mb-0">2025-07-20 10:00 AM</p>
+          </div>
+       
+          <div class="col-md-4">
+            <strong>Distance:</strong>
+            <p class="mb-0">12 km</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Charges:</strong>
+            <p class="mb-0">Batta, Toll</p>
+          </div>
+         
+            <div class="col-md-4">
+              <strong>Total Amount:</strong>
+              <p class="mb-0">₹1200</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Expiry:</strong>
+              <p class="mb-0">2025-07-19 11:59 PM</p>
+            </div>
+         
+        </div>
+
+        <!-- Return Journey Info -->
+        <div class="border rounded p-3 mb-4 bg-light">
+          <h6 class="mb-3">Return Journey</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Return Date:</strong>
+              <p class="mb-0">2025-07-21</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Return Time:</strong>
+              <p class="mb-0">09:30 AM</p>
+            </div>
+          </div>
+        </div>
+
+   
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content p-3">
+      <div class="modal-header">
+        <h5 class="modal-title" id="jobDetailsLabel">Job Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-3">
+        <!-- Job Info Section -->
+        <div class="row g-3 border-bottom pb-3 mb-4">
+          <div class="col-md-4">
+            <strong>From:</strong>
+            <p class="mb-0">Perambur, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>To:</strong>
+            <p class="mb-0">T. Nagar, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>Vehicle Type:</strong>
+            <p class="mb-0">4 Seater</p>
+          </div>
+           <div class="col-md-4">
+            <strong>Journey Type</strong>
+            <p class="mb-0">Return</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Pickup:</strong>
+            <p class="mb-0">2025-07-20 10:00 AM</p>
+          </div>
+       
+          <div class="col-md-4">
+            <strong>Distance:</strong>
+            <p class="mb-0">12 km</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Charges:</strong>
+            <p class="mb-0">Batta, Toll</p>
+          </div>
+         
+            <div class="col-md-4">
+              <strong>Total Amount:</strong>
+              <p class="mb-0">₹1200</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Expiry:</strong>
+              <p class="mb-0">2025-07-19 11:59 PM</p>
+            </div>
+         
+        </div>
+
+        <!-- Return Journey Info -->
+        <div class="border rounded p-3 mb-4 bg-light">
+          <h6 class="mb-3">Return Journey</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Return Date:</strong>
+              <p class="mb-0">2025-07-21</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Return Time:</strong>
+              <p class="mb-0">09:30 AM</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Place a Bid Section -->
+        <div class="border rounded p-3 bg-light">
+          <h6 class="mb-3">Place a Bid on this Job</h6>
+          <div class="row align-items-center">
+            <div class="col-md-6 mb-2">
+              <label class="form-label mb-1">Bid Amount</label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" class="form-control" placeholder="Enter your bid amount">
+                <span class="input-group-text">INR</span>
+              </div>
+            </div>
+            <div class="col-md-4 mt-3 mt-md-4 text-md-start text-center">
+              <button class="btn view-btn w-100" onclick="placeBid()">Place Bid</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="jobPreviewModal" tabindex="-1" aria-labelledby="jobPreviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl"> <!-- Made modal wider -->
+    <div class="modal-content position-relative">
+
+      <!-- Close Button Top Right -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+      <div class="modal-header  text-white">
+        <h5 class="modal-title" id="jobPreviewModalLabel">Job Preview</h5>
+      </div>
+
+     <div class="modal-body p-3">
+       <div class="journey-card">
+  <div class="card-section">
+    <div class="row">
+      <div class="col-6">
+        <div class="left-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>From:</strong> Perambur, Chennai</p>
+          <p><i class="fas fa-car"></i> <strong>Vehicle:</strong> 4 Seater</p>
+          <p><i class="fas fa-calendar-alt"></i> <strong>Pickup:</strong> 2025-07-20 10:00 AM</p>
+          <p><i class="fas fa-file-invoice-dollar"></i> <strong>Charges:</strong> Batta, Toll</p>
+          <p><i class="fas fa-hourglass-end"></i> <strong>Expiry:</strong> 2025-07-19 11:59 PM</p>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="right-info">
+          <p><i class="fas fa-map-marker-alt"></i> <strong>To:</strong> T. Nagar, Chennai</p>
+          <p><i class="fas fa-random"></i> <strong>Journey:</strong> Return</p>
+          <p><i class="fas fa-road"></i> <strong>Distance:</strong> 12 km</p>
+          <p><i class="fas fa-rupee-sign"></i> <strong>Amount:</strong> ₹1200</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return Card -->
+  <div class="return-card mt-3 p-3 border rounded bg-light">
+    <p><i class="fas fa-undo-alt"></i> <strong>Return</strong></p>
+    <p><i class="fas fa-calendar-day"></i> Date: 2025-07-21</p>
+    <p><i class="fas fa-clock"></i> Time: 09:30 AM</p>
+  </div>
+
+  <!-- New Driver Bids Table -->
+  <div class="driver-bids mt-4">
+    <h5 class="mb-3"><i class="fas fa-users"></i> Driver Bids</h5>
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered align-middle text-center shadow-sm">
+        <thead class="table-primary">
+          <tr>
+            <th>#</th>
+            <th>Driver Name</th>
+            <th>Bid Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Ramesh Kumar</td>
+            <td>₹460</td>
+            <td>
+              <button class="btn btn-success btn-sm me-1">Accept</button>
+              <button class="btn btn-danger btn-sm me-1">Reject</button>
+              <a href="tel:+919876543210" class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-phone"></i>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Selva Raj</td>
+            <td>₹440</td>
+            <td>
+              <button class="btn btn-success btn-sm me-1">Accept</button>
+              <button class="btn btn-danger btn-sm me-1">Reject</button>
+              <a href="tel:+919812345678" class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-phone"></i>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Karthik S</td>
+            <td>₹470</td>
+            <td>
+              <button class="btn btn-success btn-sm me-1">Accept</button>
+              <button class="btn btn-danger btn-sm me-1">Reject</button>
+              <a href="tel:+919800112233" class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-phone"></i>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="detailsModal3" tabindex="-1" aria-labelledby="detailsModalLabel1" aria-hidden="true">
+ <div class="modal-dialog modal-xl"> <!-- Made modal wider -->
+    <div class="modal-content position-relative">
+
+      <!-- Close Button Top Right -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          <div class="modal-header d-flex justify-content-between align-items-center">
+  <!-- Left: Title -->
+  <div class="flex-grow-1">
+    <h5 class="modal-title mb-0" id="jobDetailsLabel">Placed Bid Details</h5>
+  </div>
+
+  <!-- Center: Status -->
+  <div class="text-center flex-grow-1">
+    <span class="badge bg-primary p-2">Status: Chat Initiated</span>
+  </div>
+
+  <!-- Right: Close Button -->
+  <div class="text-end">
+    <button type="button"  data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+</div>
+
+     <div class="modal-body p-3">
+        <!-- Job Info Section -->
+        <div class="row g-3 border-bottom pb-3 mb-4">
+          <div class="col-md-4">
+            <strong>From:</strong>
+            <p class="mb-0">Perambur, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>To:</strong>
+            <p class="mb-0">T. Nagar, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>Vehicle Type:</strong>
+            <p class="mb-0">4 Seater</p>
+          </div>
+           <div class="col-md-4">
+            <strong>Journey Type</strong>
+            <p class="mb-0">Return</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Pickup:</strong>
+            <p class="mb-0">2025-07-20 10:00 AM</p>
+          </div>
+       
+          <div class="col-md-4">
+            <strong>Distance:</strong>
+            <p class="mb-0">12 km</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Charges:</strong>
+            <p class="mb-0">Batta, Toll</p>
+          </div>
+         
+            <div class="col-md-4">
+              <strong>Total Amount:</strong>
+              <p class="mb-0">₹1200</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Expiry:</strong>
+              <p class="mb-0">2025-07-19 11:59 PM</p>
+            </div>
+         
+        </div>
+
+        <!-- Return Journey Info -->
+        <div class="border rounded p-3 mb-4 bg-light">
+          <h6 class="mb-3">Return Journey</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Return Date:</strong>
+              <p class="mb-0">2025-07-21</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Return Time:</strong>
+              <p class="mb-0">09:30 AM</p>
+            </div>
+          </div>
+        </div>
+
+   
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="detailsModal2" tabindex="-1" aria-labelledby="detailsModalLabel1" aria-hidden="true">
+  <div class="modal-dialog modal-xl"> <!-- Made modal wider -->
+    <div class="modal-content position-relative">
+
+      <!-- Close Button Top Right -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          <div class="modal-header d-flex justify-content-between align-items-center">
+  <!-- Left: Title -->
+  <div class="flex-grow-1">
+    <h5 class="modal-title mb-0" id="jobDetailsLabel">Placed Bid Details</h5>
+  </div>
+
+  <!-- Center: Status -->
+  <div class="text-center flex-grow-1">
+    <span class="badge bg-danger p-2">Status:Rejected</span>
+  </div>
+
+  <!-- Right: Close Button -->
+  <div class="text-end">
+    <button type="button"  data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+</div>
+
+     <div class="modal-body p-3">
+        <!-- Job Info Section -->
+        <div class="row g-3 border-bottom pb-3 mb-4">
+          <div class="col-md-4">
+            <strong>From:</strong>
+            <p class="mb-0">Perambur, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>To:</strong>
+            <p class="mb-0">T. Nagar, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>Vehicle Type:</strong>
+            <p class="mb-0">4 Seater</p>
+          </div>
+           <div class="col-md-4">
+            <strong>Journey Type</strong>
+            <p class="mb-0">Return</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Pickup:</strong>
+            <p class="mb-0">2025-07-20 10:00 AM</p>
+          </div>
+       
+          <div class="col-md-4">
+            <strong>Distance:</strong>
+            <p class="mb-0">12 km</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Charges:</strong>
+            <p class="mb-0">Batta, Toll</p>
+          </div>
+         
+            <div class="col-md-4">
+              <strong>Total Amount:</strong>
+              <p class="mb-0">₹1200</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Expiry:</strong>
+              <p class="mb-0">2025-07-19 11:59 PM</p>
+            </div>
+         
+        </div>
+
+        <!-- Return Journey Info -->
+        <div class="border rounded p-3 mb-4 bg-light">
+          <h6 class="mb-3">Return Journey</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Return Date:</strong>
+              <p class="mb-0">2025-07-21</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Return Time:</strong>
+              <p class="mb-0">09:30 AM</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="completedModal1" tabindex="-1" aria-labelledby="detailsModalLabel1" aria-hidden="true">
+ <div class="modal-dialog modal-xl"> <!-- Made modal wider -->
+    <div class="modal-content position-relative">
+
+      <!-- Close Button Top Right -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          <div class="modal-header d-flex justify-content-between align-items-center">
+  <!-- Left: Title -->
+  <div class="flex-grow-1">
+    <h5 class="modal-title mb-0" id="jobDetailsLabel">Placed Bid Details</h5>
+  </div>
+
+  <!-- Center: Status -->
+  <div class="text-center flex-grow-1">
+    <span class="badge bg-success p-2">Status: Completed</span>
+  </div>
+
+  <!-- Right: Close Button -->
+  <div class="text-end">
+    <button type="button"  data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+</div>
+
+     <div class="modal-body p-3">
+        <!-- Job Info Section -->
+        <div class="row g-3 border-bottom pb-3 mb-4">
+          <div class="col-md-4">
+            <strong>From:</strong>
+            <p class="mb-0">Perambur, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>To:</strong>
+            <p class="mb-0">T. Nagar, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>Vehicle Type:</strong>
+            <p class="mb-0">4 Seater</p>
+          </div>
+           <div class="col-md-4">
+            <strong>Journey Type</strong>
+            <p class="mb-0">Return</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Pickup:</strong>
+            <p class="mb-0">2025-07-20 10:00 AM</p>
+          </div>
+       
+          <div class="col-md-4">
+            <strong>Distance:</strong>
+            <p class="mb-0">12 km</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Charges:</strong>
+            <p class="mb-0">Batta, Toll</p>
+          </div>
+         
+            <div class="col-md-4">
+              <strong>Total Amount:</strong>
+              <p class="mb-0">₹1200</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Expiry:</strong>
+              <p class="mb-0">2025-07-19 11:59 PM</p>
+            </div>
+         
+        </div>
+
+        <!-- Return Journey Info -->
+        <div class="border rounded p-3 mb-4 bg-light">
+          <h6 class="mb-3">Return Journey</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Return Date:</strong>
+              <p class="mb-0">2025-07-21</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Return Time:</strong>
+              <p class="mb-0">09:30 AM</p>
+            </div>
+          </div>
+        </div>
+
+   
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="completedModal2" tabindex="-1" aria-labelledby="detailsModalLabel1" aria-hidden="true">
+  <div class="modal-dialog modal-xl"> <!-- Made modal wider -->
+    <div class="modal-content position-relative">
+
+      <!-- Close Button Top Right -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          <div class="modal-header d-flex justify-content-between align-items-center">
+  <!-- Left: Title -->
+  <div class="flex-grow-1">
+    <h5 class="modal-title mb-0" id="jobDetailsLabel">Placed Bid Details</h5>
+  </div>
+
+  <!-- Center: Status -->
+  <div class="text-center flex-grow-1">
+    <span class="badge bg-success p-2">Status: Completed</span>
+  </div>
+
+  <!-- Right: Close Button -->
+  <div class="text-end">
+    <button type="button"  data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+</div>
+
+     <div class="modal-body p-3">
+        <!-- Job Info Section -->
+        <div class="row g-3 border-bottom pb-3 mb-4">
+          <div class="col-md-4">
+            <strong>From:</strong>
+            <p class="mb-0">Perambur, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>To:</strong>
+            <p class="mb-0">T. Nagar, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>Vehicle Type:</strong>
+            <p class="mb-0">4 Seater</p>
+          </div>
+           <div class="col-md-4">
+            <strong>Journey Type</strong>
+            <p class="mb-0">Return</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Pickup:</strong>
+            <p class="mb-0">2025-07-20 10:00 AM</p>
+          </div>
+       
+          <div class="col-md-4">
+            <strong>Distance:</strong>
+            <p class="mb-0">12 km</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Charges:</strong>
+            <p class="mb-0">Batta, Toll</p>
+          </div>
+         
+            <div class="col-md-4">
+              <strong>Total Amount:</strong>
+              <p class="mb-0">₹1200</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Expiry:</strong>
+              <p class="mb-0">2025-07-19 11:59 PM</p>
+            </div>
+         
+        </div>
+
+        <!-- Return Journey Info -->
+        <div class="border rounded p-3 mb-4 bg-light">
+          <h6 class="mb-3">Return Journey</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Return Date:</strong>
+              <p class="mb-0">2025-07-21</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Return Time:</strong>
+              <p class="mb-0">09:30 AM</p>
+            </div>
+          </div>
+        </div>
+
+   
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="completedModal3" tabindex="-1" aria-labelledby="detailsModalLabel1" aria-hidden="true">
+   <div class="modal-dialog modal-xl"> <!-- Made modal wider -->
+    <div class="modal-content position-relative">
+
+      <!-- Close Button Top Right -->
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+          <div class="modal-header d-flex justify-content-between align-items-center">
+  <!-- Left: Title -->
+  <div class="flex-grow-1">
+    <h5 class="modal-title mb-0" id="jobDetailsLabel">Placed Bid Details</h5>
+  </div>
+
+  <!-- Center: Status -->
+  <div class="text-center flex-grow-1">
+    <span class="badge bg-success p-2">Status: Completed</span>
+  </div>
+
+  <!-- Right: Close Button -->
+  <div class="text-end">
+    <button type="button"  data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+</div>
+
+     <div class="modal-body p-3">
+        <!-- Job Info Section -->
+        <div class="row g-3 border-bottom pb-3 mb-4">
+          <div class="col-md-4">
+            <strong>From:</strong>
+            <p class="mb-0">Perambur, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>To:</strong>
+            <p class="mb-0">T. Nagar, Chennai</p>
+          </div>
+          <div class="col-md-4">
+            <strong>Vehicle Type:</strong>
+            <p class="mb-0">4 Seater</p>
+          </div>
+           <div class="col-md-4">
+            <strong>Journey Type</strong>
+            <p class="mb-0">Return</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Pickup:</strong>
+            <p class="mb-0">2025-07-20 10:00 AM</p>
+          </div>
+       
+          <div class="col-md-4">
+            <strong>Distance:</strong>
+            <p class="mb-0">12 km</p>
+          </div>
+
+          <div class="col-md-4">
+            <strong>Charges:</strong>
+            <p class="mb-0">Batta, Toll</p>
+          </div>
+         
+            <div class="col-md-4">
+              <strong>Total Amount:</strong>
+              <p class="mb-0">₹1200</p>
+            </div>
+            <div class="col-md-4">
+              <strong>Expiry:</strong>
+              <p class="mb-0">2025-07-19 11:59 PM</p>
+            </div>
+         
+        </div>
+
+        <!-- Return Journey Info -->
+        <div class="border rounded p-3 mb-4 bg-light">
+          <h6 class="mb-3">Return Journey</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Return Date:</strong>
+              <p class="mb-0">2025-07-21</p>
+            </div>
+            <div class="col-md-6">
+              <strong>Return Time:</strong>
+              <p class="mb-0">09:30 AM</p>
+            </div>
+          </div>
+        </div>
+
+   
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+@endsection
+@section('script')
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js"
+    integrity="sha512-Eak/29OTpb36LLo2r47IpVzPBLXnAMPAVypbSZiZ4Qkf8p/7S/XRG5xp7OKWPPYfJT6metI+IORkR5G8F900+g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+
+<script>
+  const tripRadios = document.querySelectorAll('input[name="tripType"]');
+  const dropSection = document.getElementById("dropSection");
+  const from = document.getElementById("fromPlace");
+  const to = document.getElementById("toPlace");
+  const distance = document.getElementById("distance");
+  const passengerCount = document.getElementById("passengerCount");
+  const expectedAmount = document.getElementById("expectedAmount");
+  const marketedPrice = document.getElementById("marketedPrice");
+  const pickupDate = document.getElementById("pickupDate");
+  const expiryDate = document.getElementById("expiryDate");
+  const bata = document.getElementById("bata");
+  const toll = document.getElementById("toll");
+  const parking = document.getElementById("parking");
+
+  const ratePerKmPerPerson = 10;
+
+  function calculateDistance() {
+    if (from.value && to.value) {
+      let dummyDistance = Math.floor(Math.random() * 100) + 50; // Simulate distance
+      distance.value = dummyDistance;
+      updateAmount();
+    }
+  }
+
+  function updateAmount() {
+    let dist = parseInt(distance.value) || 0;
+    let count = parseInt(passengerCount.value) || 0;
+
+    let totalExtra = (parseInt(bata.value) || 0) +
+                     (parseInt(toll.value) || 0) +
+                     (parseInt(parking.value) || 0);
+
+    let total = dist * count * ratePerKmPerPerson + totalExtra;
+    expectedAmount.value = isNaN(total) ? '' : total.toFixed(2);
+  }
+
+  tripRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (radio.value === "roundtrip" && radio.checked) {
+        dropSection.classList.remove("d-none");
+      } else {
+        dropSection.classList.add("d-none");
+      }
+    });
+  });
+
+  [from, to].forEach(el => el.addEventListener("input", calculateDistance));
+  [passengerCount, distance, bata, toll, parking].forEach(el => el.addEventListener("input", updateAmount));
+
+  pickupDate.addEventListener("change", () => {
+    const pickup = pickupDate.value;
+    if (pickup) {
+      expiryDate.max = pickup;
+
+      // Optional: clear expiry if it's after pickup
+      if (expiryDate.value && expiryDate.value > pickup) {
+        expiryDate.value = '';
+      }
+    }
+  });
+
+  document.getElementById("createJobBtn").addEventListener("click", function () {
+    alert("Created successfully!");
+  });
+$(document).ready(function () {
+    
+   
+    
+    // setInterval(function() {
+    //     location.reload();
+    // }, 60000);
+
+    
+    $('#mobile_menu_opener').click(function () {
+        $('#left_sidebar').show();
+        $(this).toggleClass('fa-bars fa-bars');
+        
+    });
+
+ 
+    var wow = new WOW({
+        boxClass: 'wow',
+        animateClass: 'animated',
+        offset: 0,
+        mobile: true,
+        live: true,
+        callback: function (box) {
+        },
+        scrollContainer: null
+    });
+    wow.init();
+});
+    
+</script>
+
+@endsection

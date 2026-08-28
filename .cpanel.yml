@@ -1,0 +1,11 @@
+---
+deployment:
+  tasks:
+    # !! CHANGE THIS PATH to your production server's full path !!
+    - export DEPLOYPATH=/home2/goridenet/ride.goride.net.in
+
+    # Run composer install
+    - /usr/local/bin/composer install --no-dev -d $DEPLOYPATH
+
+    # Run Laravel migrations and cache
+    - /usr/local/bin/php $DEPLOYPATH/artisan optimize:clear

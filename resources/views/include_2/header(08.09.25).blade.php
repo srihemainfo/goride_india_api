@@ -1,0 +1,556 @@
+<style>
+
+.btn-signin {
+ position: relative;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 5px 7px;
+    border: none;
+    transition: color 0.4s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #f9bf00 !important;
+    color: #222;
+    width: 115px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* Top closing */
+.btn-signin::before,
+.btn-signin::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+        background: #f9bf00;
+  z-index: -1;
+  transition: transform 0.4s ease;
+}
+
+/* Top slice */
+.btn-signin::before {
+  top: 0;
+  transform: translateY(-100%);
+}
+
+/* Bottom slice */
+.btn-signin::after {
+  bottom: 0;
+  transform: translateY(100%);
+}
+
+/* On Hover – bring both inward */
+.btn-signin:hover::before {
+  transform: translateY(0);
+}
+.btn-signin:hover::after {
+  transform: translateY(0);
+}
+
+.btn-signin:hover {
+  color: black !important;
+}
+
+.notranslate {
+  translate: no;
+}
+
+.navbar-toggler[aria-expanded="true"] i {
+    color: #f9bf00;
+  }
+  /*.btn-signin:hover {*/
+  /*   font-weight: bold;*/
+  /* padding: 4px 6px;*/
+  /*  border: none;*/
+  /*  transition: all 0.4s ease;*/
+  /*  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);*/
+  /*  background: linear-gradient(135deg, #FFB300, #FF5722);*/
+  /*  color: #fff;*/
+  /*  transform: translateY(-2px);*/
+  /*}*/
+  .gradient-globe {
+  background: linear-gradient(to right, #ffc107, #ff4081); /* Yellow to pink */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 18px;
+}
+.skiptranslate{
+    display:none;
+}
+
+body {
+    position:static !important;
+}
+@media screen and (max-width: 576px) {
+    .logo-img {
+        margin-bottom: 0px;
+        width: 167px;
+        padding: 0;
+    }
+     .header .caption h2 {
+        font-size: 23px;
+    }
+    /*.v-middle {*/
+    /*    transform: translate(0%, -65%);*/
+    /*    top:0;*/
+    /*    margin-top:12px !important;*/
+    /*}*/
+    .cs_btn.cs_style_2{
+        font-size:14px;
+        padding:5px 24px;
+    }
+    /*.logo-img[src="/goride/img/logo-dark.png"]{*/
+    /*    width: 171px;*/
+    /*    top: -16px;*/
+    /*}*/
+    .btn-signin{
+        padding: 6px 6px;
+        font-size: 18px;
+    }
+    .navbar .navbar-right .wrap .icon{
+            height: 43px;
+    width: 43px;
+    }
+    
+}
+
+#topBar {
+    /*position: sticky;*/
+    /*top: 0;*/
+    z-index: 999;
+   
+  }
+
+  @media (max-width: 768px) {
+    #topBar {
+      transition: transform 0.3s ease;
+              position: relative;
+        top: 12px;
+    }
+    .navbar .navbar-collapse {
+        max-height: 347px;
+        /* overflow: auto; */
+        /* background: #fff; */
+        /* text-align: left; */
+        /* position: fixed; */
+        top: 85px;
+        left: 0;
+        width: 100vw;
+        /* height: calc(100vh - 85px); */
+        background-color: #fff;
+        z-index: 99999;
+        padding: 1rem;
+        overflow-y: auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .slider-fade .item .caption {
+        top:38%;
+    }
+    .slider-fade .item{
+            height: 100%;
+    }
+    
+  }
+  
+  .spinner {
+    border: 2px solid #f3f3f3; /* Light grey */
+    border-top: 2px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .btn[disabled] {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  
+  
+</style>
+
+
+{{-- <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>GoRide</title>
+    <link rel="shortcut icon" href="{{ asset('goride/img/Go-Ride-fav-icon.webp') }}" />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&amp;display=swap">
+    <link rel="stylesheet" href="{{ asset('goride/css/plugins.css') }}" />
+    <link rel="stylesheet" href="{{ asset('goride/css/style.css') }}" />
+</head> --}}
+
+<!-- Preloader -->
+<div id="preloader-wrap">
+    <div class="car">
+        <div class="strike"></div>
+        <div class="strike strike2"></div>
+        <div class="strike strike3"></div>
+        <div class="strike strike4"></div>
+        <div class="strike strike5"></div>
+        <div class="car-detail spoiler"></div>
+        <div class="car-detail back"></div>
+        <div class="car-detail center"></div>
+        <div class="car-detail center1"></div>
+        <div class="car-detail front"></div>
+        <div class="car-detail wheel"></div>
+        <div class="car-detail wheel wheel2"></div>
+    </div>
+</div>
+
+<!-- Custom Cursor -->
+<div class="custom-cursor"></div>
+
+<!-- Progress scroll totop -->
+<div class="progress-wrap cursor-pointer">
+    <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+        <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
+    </svg>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg" id="home_header_top">
+   <div class="container mt-3" id="container">
+   
+        <!-- Logo -->
+        <div class="logo-wrapper">
+            <a class="logo" href="/"> <img src="https://www.goride.run/goride/img/logo-light.png" class="logo-img" alt=""> </a>
+        </div>
+        
+        <!-- Mobile View - Language Dropdown and Hamburger -->
+        <div class="d-flex d-lg-none align-items-center gap-2 ms-auto">
+            <!-- Language Dropdown - Mobile Only -->
+            <div class="dropdown notranslate" translate="no">
+                <button class="btn dropdown-toggle d-flex align-items-center text-warning p-2" type="button" id="mobileLanguageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-globe gradient-globe"></i>
+                </button>
+                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileLanguageDropdown">
+                           <li><a class="dropdown-item" href="#" onclick="translatePage('en')">English</a></li> 
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('ar')">Arabic</a></li>
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('fr')">French</a></li> 
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('es')">Spanish</a></li> 
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('pt')">Portuguese</a></li>
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('ro')">Romanian</a></li>
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('el')">Greek</a></li>
+                </ul>
+
+
+            </div>
+            
+            <!-- Hamburger Button -->
+            <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation"> 
+                <span class="navbar-toggler-icon"><i class="fa-solid fa-bars"></i></span> 
+            </button>
+        </div>
+        
+        <div class="row">
+            <!-- Desktop View - Top Bar (Language and Auth Buttons) -->
+            <div class="col-12 d-none d-lg-flex justify-content-end  align-items-center gap-2" id="topBar">
+                
+                    @if ($userDetails != null && isset($userDetails['userID']) && $userDetails['userID'] != null)
+           <button class="btn btn-signin" onclick="window.location.href='/dashboard'">
+  Dashboard
+</button>
+
+<!-- Logout Button -->
+<button class="btn btn-signin" onclick="logoutFUN()">
+  Logout
+</button>
+     
+     @else
+     
+<button class="btn btn-signin signin-btn" onclick="handleClick(this, '/login')" id="signin-btn">
+  Log in
+</button>
+<button class="btn btn-signin signup-btn" onclick="handleClick(this, '/signup')" id="signup-btn">
+  Sign Up
+</button>
+
+     
+     @endif
+                <!-- Language Dropdown - Desktop Only -->
+                <div class="dropdown notranslate" translate="no">
+                    <button class="btn dropdown-toggle d-flex align-items-center text-warning" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-globe me-2 gradient-globe"></i>
+                        <span class="g_lang">English</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('en')">English</a></li> 
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('ar')">Arabic</a></li>
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('fr')">French</a></li> 
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('es')">Spanish</a></li> 
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('pt')">Portuguese</a></li>
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('ro')">Romanian</a></li>
+                       <li><a class="dropdown-item" href="#" onclick="translatePage('el')">Greek</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="google_translate_element" style="display: none;">
+            
+            </div>
+
+            <div class="col-12">
+                <div class="collapse navbar-collapse mb-2" id="navbar">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="/features">Features</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/crm-with-dispatch">CRM with Dispatch System</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/driver-app">Driver App</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/passenger-app">Passenger App</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/pricing">Pricing</a></li>
+                    </ul>
+                    
+                    <!-- Mobile Only - Auth Buttons inside hamburger -->
+
+<div class="d-lg-none text-center px-3 gap-2">
+    @if ($userDetails != null && isset($userDetails['userID']) && $userDetails['userID'] != null)
+        <!-- Logged In -->
+        <button class="btn btn-signin" onclick="window.location.href='/dashboard'">
+            Dashboard
+        </button>
+        <button class="btn btn-signin" onclick="logoutFUN()">
+            Logout
+        </button>
+    @else
+             
+<button class="btn btn-signin signin-btn" onclick="handleClick(this, '/login')">
+  Log in
+</button>
+<button class="btn btn-signin signup-btn" onclick="handleClick(this, '/signup')">
+  Sign Up
+</button>
+        
+    @endif
+</div>
+
+                    
+                    <div class="navbar-right">
+                        <div class="wrap">
+                            <div class="phone-icon-wrapper">
+                                <a href="tel:+919884557004" class="phone-icon">
+                                    <div class="icon"> <i class="flaticon-phone-call"></i> </div>
+                                </a>
+                                <!--<div class="menu-icons">-->
+                                <!--    <a href="tel:+16473661867" title="For Canada Only">-->
+                                <!--        <div class="icon"> <i class="fa-brands fa-canadian-maple-leaf"></i> </div>-->
+                                <!--    </a>-->
+                                <!--    <a href="tel:+917299888886" title="International">-->
+                                <!--        <div class="icon"> <i class="fa-solid fa-earth-asia"></i> </div>-->
+                                <!--    </a>-->
+                                <!--</div>-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Google Translate script loader -->
+<script type="text/javascript">
+  const languageMap = {
+    en: "EN",
+    ar: "AR",
+    fr: "FR",
+    es: "ES",
+    pt: "PT",
+    ro: "RO",
+    el: "EL"
+  };
+
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement({ pageLanguage: 'en' }, 'google_translate_element');
+  }
+
+  function translatePage(lang) {
+    //   setCookie('doc_lan', lang);
+    const interval = setInterval(() => {
+      const select = document.querySelector(".goog-te-combo");
+      if (select) {
+        select.value = lang;
+        select.dispatchEvent(new Event("change"));
+        clearInterval(interval);
+
+        // ✅ Change button label to selected language
+        const button = document.getElementById("languageDropdown");
+        if (button && languageMap[lang]) {
+          button.innerHTML = `<i class="fas fa-globe me-2 gradient-globe"></i> ${languageMap[lang]}`;
+        }
+      }
+    }, 100);
+  }
+  
+  function handleClick(button, redirectUrl) {
+    // Disable the button to prevent multiple clicks
+    button.disabled = true;
+
+    // Add the spinner
+    const spinner = document.createElement('span');
+    spinner.classList.add('spinner');
+    button.appendChild(spinner);
+
+    // Delay before redirecting (e.g., 500ms)
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 500);
+  }
+  
+</script>
+
+
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script>
+ let lastScrollTop = 0;
+
+  window.addEventListener("scroll", function () {
+    const topBar = document.getElementById("topBar");
+    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Only apply on mobile
+    if (window.innerWidth <= 768) {
+      if (currentScroll > lastScrollTop) {
+        // Scrolling down
+        topBar.style.transform = "translateY(-100%)";
+        topBar.style.transition = "transform 0.3s ease";
+      } else {
+        // Scrolling up
+        topBar.style.transform = "translateY(0)";
+      }
+    } else {
+      // Reset style on larger screens
+      topBar.style.transform = "translateY(0)";
+    }
+
+    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+  });
+    // Preloader
+
+    window.onload = function() {
+        document.body.classList.add("loaded");
+    }
+
+    $(document).ready(function() {
+        
+        let g_lang = getCookie('googtrans')??'/en/en';
+        if(g_lang){
+            let parts = g_lang.split('/');
+            g_lang = parts[2];
+        }
+        
+        translatePage(g_lang)
+        
+        $('.phone-icon').on('click', function(event) {
+            event.preventDefault();
+            $(this).closest('.phone-icon-wrapper').toggleClass('active');
+        });
+
+        $(document).on('click', function(event) {
+            if (!$(event.target).closest('.phone-icon-wrapper').length) {
+                $('.phone-icon-wrapper').removeClass('active');
+            }
+        });
+    });
+    
+    $(document).on('click', function (event) {
+        if (!$(event.target).closest('#navbar, .navbar-toggler').length) {
+            $('#navbar').collapse('hide');
+        }
+    });
+
+    const logoutFUN = () => {
+
+        try {
+
+            $.ajax({
+
+                url: origin + '/api/logout',
+
+                type: 'POST',
+
+                headers: {
+
+                    "Accept": "application/json; charset=utf-8",
+
+                    "Content-Type": "application/json; charset=utf-8",
+
+                    "Authorization": 'Bearer ' + getCookie("sessionToken"),
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+
+                success: function(response) {
+
+                    if (response.status === 'success') {
+
+                        deleteCookie('sessionToken');
+                        deleteCookie('cusid');
+                        deleteCookie('name');
+                        deleteCookie('transaction_id');
+                        deleteCookie('finaltotal');
+                        deleteCookie('newFormCartData');
+                        deleteCookie('cartdata');
+                        deleteCookie('cartondata');
+                        deleteCookie('merchantOrderReference');
+                        deleteCookie('makepayemntre');
+                        deleteCookie('MakepaymentState');
+                        //  deleteCookie('allow_id');
+                        deleteCookie('newFormCartData');
+                        deleteCookie('billingDetails');
+                        deleteCookie('shipping');
+                        //  deleteCookie('couponCode');
+                        deleteCookie('payment_method');
+                        deleteCookie('userDetails');
+                        //  deleteCookie('payment_id');
+
+                        localStorage.clear();
+
+                        //  if (isWebView()) {
+                        //    Android.logout();
+                        //  }
+
+                        window.location.href = origin;
+
+                    } else {
+                        window.location.href = origin;
+                        console.log('Error: ' + response);
+
+                    }
+
+                },
+
+                error: function(xhr, status, error) {
+
+                    window.location.href = origin;
+
+                    console.error('Request failed');
+
+                    console.error(xhr, status, error);
+
+                },
+
+                processData: false,
+
+                contentType: false
+
+            });
+
+        } catch (e) {
+
+            console.log('Error: ' + e.message);
+
+        }
+
+    }
+</script>
