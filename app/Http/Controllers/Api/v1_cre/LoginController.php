@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+use App\Models\user_register;
+
 class LoginController extends Controller
 {
     public function Login(Request $request)
@@ -84,6 +86,9 @@ class LoginController extends Controller
                     ->update(['browser_fcm_token' => $fcmToken]);
             }
 
+            $userModel = user_register::find($user->id);
+            $token = $userModel ? $userModel->createToken('CREaccessToken')->plainTextToken : null;
+
             return response()->json([
                 'status'  => true,
                 'message' => 'Login successful',
@@ -91,6 +96,7 @@ class LoginController extends Controller
                     'id'      => $user->id,
                     'roll_id' => $user->roll_id,
                     'email'   => $user->email,
+                    'token'   => $token,
                 ]
             ], 200);
 

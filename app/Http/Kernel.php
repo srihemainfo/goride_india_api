@@ -78,5 +78,6 @@ class Kernel extends HttpKernel
         'multi.auth' => \App\Http\Middleware\MultiAuthToken::class,
         'goride.token' => \App\Http\Middleware\GoRideTokenMiddleware::class,
         'auth.global_db' => \App\Http\Middleware\GlobalAuthDatabaseToken::class,
+        'cre.auth' => \App\Http\Middleware\CreAuthMiddleware::class,
     ];
 }
