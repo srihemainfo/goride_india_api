@@ -6835,13 +6835,13 @@ Thank you,
                     $driverIds = $drivers->pluck('id')->toArray();
                 }
                 
-                if (empty($fcmTokens)) {
-                    return response()->json([
-                        'status' => false,
-                        'data' => [],
-                        'message' => 'Currently No Active Drivers were found in Your Pickup Location'
-                    ]);
-                }
+                // if (empty($fcmTokens)) {
+                //     return response()->json([
+                //         'status' => false,
+                //         'data' => [],
+                //         'message' => 'Currently No Active Drivers were found in Your Pickup Location'
+                //     ]);
+                // }
                 
                 unset(
                     $data['from_latitude'],
