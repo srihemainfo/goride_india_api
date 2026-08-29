@@ -61,7 +61,7 @@ class CreJobsController extends Controller
                 }
 
                 // Badge determination
-                $badge = "Now";
+                $badge = "Regular";
                 if (strtolower((string)$job->global_type) === 'schedule' || strtolower((string)$job->job_status) === 'schedule') {
                     $badge = "Schedule";
                 }
