@@ -9,6 +9,7 @@ Route::post('/login', [LoginController::class, 'Login']);
 
 // Authenticated CRE routes
 Route::middleware(['cre.auth'])->group(function () {
+    Route::post('/logout', [LoginController::class, 'logout']);
     Route::get('/job-list', [CreJobsController::class, 'getJobList']);
     Route::get('/job-details', [CreJobsController::class, 'getJobDetails']);
     Route::post('/job-details', [CreJobsController::class, 'getJobDetails']);

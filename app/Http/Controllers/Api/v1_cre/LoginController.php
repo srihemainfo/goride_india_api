@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+use Laravel\Sanctum\PersonalAccessToken;
 use App\Models\user_register;
 
 class LoginController extends Controller
@@ -45,7 +46,7 @@ class LoginController extends Controller
 
         try {
             $user = DB::table('user_register')
-                ->select(['id', 'roll_id', 'email', 'pass', 'status', 'browser_fcm_token'])
+                ->select(['id', 'roll_id', 'email', 'pass', 'status', 'fcm_token'])
                 ->where('email', $email)
                 ->where('roll_id', '3')
                 ->where('deletes', '0')
@@ -80,10 +81,10 @@ class LoginController extends Controller
 
             RateLimiter::clear($throttleKey);
 
-            if ($fcmToken !== null && $user->browser_fcm_token !== $fcmToken) {
+            if ($fcmToken !== null && $user->fcm_token !== $fcmToken) {
                 DB::table('user_register')
                     ->where('id', $user->id)
-                    ->update(['browser_fcm_token' => $fcmToken]);
+                    ->update(['fcm_token' => $fcmToken]);
             }
 
             $userModel = user_register::find($user->id);
@@ -110,6 +111,31 @@ class LoginController extends Controller
             return response()->json([
                 'status'  => false,
                 'message' => 'An error occurred during authentication. Please try again.'
+            ], 500);
+        }
+    }
+
+    public function logout(Request $request)
+    {
+        try {
+            $token = $request->bearerToken();
+            if ($token) {
+                PersonalAccessToken::findToken($token)?->delete();
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Logout successful'
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('CRE Logout Exception: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to logout'
             ], 500);
         }
     }
