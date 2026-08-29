@@ -1149,10 +1149,22 @@ class CreJobsController extends Controller
             if (!empty($driverIds)) {
                 $drvs = DB::table('user_register')
                     ->whereIn('id', array_keys($driverIds))
-                    ->select(['id', 'name', 'mobile', 'email', 'cab_type'])
+                    ->select(['id', 'name', 'mobile', 'email', 'vehicle_details'])
                     ->get();
                 foreach ($drvs as $d) {
-                    $driverData[$d->id] = (array)$d;
+                    $vType = null;
+                    if (!empty($d->vehicle_details)) {
+                        $vDetails = is_string($d->vehicle_details) ? json_decode($d->vehicle_details, true) : (array)$d->vehicle_details;
+                        $vType = $vDetails['type'] ?? ($vDetails['vehicle_type'] ?? null);
+                    }
+                    $driverData[$d->id] = [
+                        'id'              => $d->id,
+                        'name'            => $d->name,
+                        'mobile'          => $d->mobile,
+                        'email'           => $d->email,
+                        'cab_type'        => $vType ?? 'Standard',
+                        'vehicle_details' => $d->vehicle_details
+                    ];
                 }
             }
 
