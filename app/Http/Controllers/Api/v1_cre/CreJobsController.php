@@ -25,6 +25,8 @@ class CreJobsController extends Controller
                 'status' => 'Online',
             ];
 
+            $now = now();
+
             $rawJobs = DB::table('cus_job_temp')
                 ->select([
                     'id',
@@ -44,12 +46,25 @@ class CreJobsController extends Controller
                     $q->whereNull('job_no')
                       ->orWhere('job_no', 'NOT LIKE', 'GRP-%');
                 })
+                ->where(function ($q) use ($now) {
+                    $q->whereNull('pickup_date')
+                      ->orWhere('pickup_date', '>=', $now);
+                })
                 ->orderBy('id', 'desc')
                 ->get();
 
             $unassignedJobs = [];
 
             foreach ($rawJobs as $job) {
+                if (!empty($job->pickup_date)) {
+                    try {
+                        if (Carbon::parse($job->pickup_date)->isPast()) {
+                            continue;
+                        }
+                    } catch (\Throwable $e) {
+                        // ignore parse errors
+                    }
+                }
                 $jobNo = $job->job_no ?? ('GR-' . $job->id);
 
                 // Source determination
