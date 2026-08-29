@@ -581,8 +581,8 @@ class CreJobsController extends Controller
                 ], 422);
             }
 
-            $creUser = $request->get('cre_user');
-            $cancelledBy = $request->input('cancelled_by') ?? ($creUser->name ?? ($creUser->email ?? 'CRE'));
+            $creUser = $request->get('cre_user') ?? auth()->user();
+            $cancelledBy = $creUser->id ?? auth()->id() ?? 0;
             $cancelReason = $request->input('cancel_reason') ?? 'Cancelled by CRE';
 
             $get_job = DB::table('cus_job_temp')
