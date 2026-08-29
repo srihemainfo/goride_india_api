@@ -851,119 +851,139 @@ class CreJobsController extends Controller
                 'district_id' => $districtId
             ]);
 
-            $trackingId = DB::table('push_notifications')->insertGetId([
-                'user_id'    => '0',
-                'sent_by'    => $creUserId,
-                'title'      => $title,
-                'body'       => $body,
-                'status'     => 2,
-                'req_json'   => $reqJsonData,
-                'res_json'   => json_encode(['status' => 'Processing in background...', 'job_no' => $jobNo]),
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deletes'    => 0,
-            ]);
+            $existingLog = DB::table('push_notifications')
+                ->where(function($q) use ($jobNo, $jobId) {
+                    $q->where('req_json', 'LIKE', '%"job_id":' . $jobId . '%')
+                      ->orWhere('req_json', 'LIKE', '%"job_id":"' . $jobId . '"%')
+                      ->orWhere('req_json', 'LIKE', '%"job_no":"' . $jobNo . '"%');
+                })
+                ->where('req_json', 'LIKE', '%"target":"drivers"%')
+                ->where('deletes', '0')
+                ->orderBy('id', 'desc')
+                ->first();
 
-            app()->terminating(function () use ($controller, $title, $body, $jobId, $jobNo, $trackingId, $districtId) {
-                try {
-                    set_time_limit(0);
-                    ini_set('memory_limit', '512M');
+            $trackingId = null;
+            $existingDelivered = [];
+            $existingFailed = [];
+            $excludedDriverIds = [];
 
-                    $accessToken = $controller->getAccessToken();
-                    if (!$accessToken) {
-                        DB::table('push_notifications')->where('id', $trackingId)->update([
-                            'status'     => 0,
-                            'res_json'   => json_encode(['error' => 'Failed to obtain access token']),
-                            'updated_at' => now(),
-                        ]);
-                        return;
-                    }
-
-                    $successCount = 0;
-                    $failureCount = 0;
-                    $deliveredList = [];
-                    $notDeliveredList = [];
-
-                    $query = DB::table('user_register')
-                        ->where(function($q) {
-                            $q->where('deletes', '0')->orWhere('deletes', 0);
-                        })
-                        ->whereNotNull('fcm_token')
-                        ->where('fcm_token', '!=', '');
-
-                    if ($districtId > 0) {
-                        $query->where('districts_id', $districtId);
-                    }
-
-                    $query->select('id', 'name', 'mobile', 'fcm_token')
-                          ->orderBy('id', 'asc');
-
-                    $query->chunk(500, function ($drivers) use ($controller, $accessToken, $title, $body, $jobId, $jobNo, &$successCount, &$failureCount, &$deliveredList, &$notDeliveredList) {
-                        foreach ($drivers as $user) {
-                            $uName = !empty($user->name) ? $user->name : 'Driver';
-                            $uMobile = !empty($user->mobile) ? $user->mobile : 'N/A';
-
-                            $personalizedTitle = str_ireplace('{{name}}', $uName, $title);
-                            $personalizedBody  = str_ireplace('{{name}}', $uName, $body);
-
-                            $driverInfo = [
-                                'id'     => $user->id,
-                                'name'   => $uName,
-                                'mobile' => $uMobile
-                            ];
-
-                            try {
-                                $response = $controller->sendFCM($accessToken, $user->fcm_token, $personalizedTitle, $personalizedBody, [
-                                    'type'   => 'admin_broadcast_district',
-                                    'job_id' => $jobId,
-                                    'job_no' => $jobNo
-                                ]);
-
-                                if (isset($response['name'])) {
-                                    $successCount++;
-                                    $deliveredList[] = $driverInfo;
-                                } else {
-                                    $failureCount++;
-                                    $driverInfo['error'] = 'FCM Response Error';
-                                    $notDeliveredList[] = $driverInfo;
-                                }
-                            } catch (\Throwable $e) {
-                                $failureCount++;
-                                $driverInfo['error'] = $e->getMessage();
-                                $notDeliveredList[] = $driverInfo;
-                            }
+            if ($existingLog) {
+                $trackingId = $existingLog->id;
+                if (!empty($existingLog->res_json)) {
+                    $resData = json_decode($existingLog->res_json, true);
+                    if (is_array($resData)) {
+                        $existingDelivered = $resData['delivered'] ?? [];
+                        $existingFailed    = $resData['not_delivered'] ?? [];
+                        foreach ($existingDelivered as $d) {
+                            if (isset($d['id'])) $excludedDriverIds[] = (int) $d['id'];
                         }
-                    });
-
-                    $resJson = [
-                        'delivered'     => $deliveredList,
-                        'not_delivered' => $notDeliveredList,
-                        'success_count' => $successCount,
-                        'failure_count' => $failureCount,
-                        'job_no'        => $jobNo,
-                        'job_id'        => $jobId,
-                    ];
-
-                    DB::table('push_notifications')->where('id', $trackingId)->update([
-                        'status'     => ($successCount > 0) ? 1 : 0,
-                        'res_json'   => json_encode($resJson, JSON_UNESCAPED_UNICODE),
-                        'updated_at' => now(),
-                    ]);
-
-                } catch (\Throwable $exception) {
-                    Log::error('CRE sendJobNotification terminating error: ' . $exception->getMessage());
-                    DB::table('push_notifications')->where('id', $trackingId)->update([
-                        'status'     => 0,
-                        'res_json'   => json_encode(['error' => 'Process failed: ' . $exception->getMessage()]),
-                        'updated_at' => now(),
-                    ]);
+                        foreach ($existingFailed as $f) {
+                            if (isset($f['id'])) $excludedDriverIds[] = (int) $f['id'];
+                        }
+                    }
                 }
-            });
+            }
+
+            $query = DB::table('user_register')
+                ->where(function($q) {
+                    $q->where('deletes', '0')->orWhere('deletes', 0);
+                })
+                ->whereNotNull('fcm_token')
+                ->where('fcm_token', '!=', '');
+
+            if ($districtId > 0) {
+                $query->where('districts_id', $districtId);
+            }
+
+            if (!empty($excludedDriverIds)) {
+                $query->whereNotIn('id', $excludedDriverIds);
+            }
+
+            $drivers = $query->select('id', 'name', 'fcm_token')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $newDeliveredList = [];
+            $newNotDeliveredList = [];
+
+            if ($drivers->isNotEmpty()) {
+                $accessToken = $this->getAccessToken();
+                if ($accessToken) {
+                    foreach ($drivers as $user) {
+                        $uName = !empty($user->name) ? $user->name : 'Driver';
+                        $personalizedTitle = str_ireplace('{{name}}', $uName, $title);
+                        $personalizedBody  = str_ireplace('{{name}}', $uName, $body);
+
+                        try {
+                            $response = $this->sendFCM($accessToken, $user->fcm_token, $personalizedTitle, $personalizedBody, [
+                                'type'   => 'admin_broadcast_district',
+                                'job_id' => $jobId,
+                                'job_no' => $jobNo
+                            ]);
+
+                            if (isset($response['name'])) {
+                                $newDeliveredList[] = [
+                                    'id'   => (int) $user->id,
+                                    'name' => $uName
+                                ];
+                            } else {
+                                $newNotDeliveredList[] = [
+                                    'id'    => (int) $user->id,
+                                    'name'  => $uName,
+                                    'error' => 'FCM Response Error'
+                                ];
+                            }
+                        } catch (\Throwable $e) {
+                            $newNotDeliveredList[] = [
+                                'id'    => (int) $user->id,
+                                'name'  => $uName,
+                                'error' => 'FCM Response Error'
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $finalDelivered = array_values(array_merge($existingDelivered, $newDeliveredList));
+            $finalFailed    = array_values(array_merge($existingFailed, $newNotDeliveredList));
+
+            $resJsonData = [
+                'success_count' => count($finalDelivered),
+                'failure_count' => count($finalFailed),
+                'delivered'     => $finalDelivered,
+                'not_delivered' => $finalFailed
+            ];
+
+            if ($trackingId) {
+                DB::table('push_notifications')->where('id', $trackingId)->update([
+                    'sent_by'    => $creUserId,
+                    'title'      => $title,
+                    'body'       => $body,
+                    'status'     => 1,
+                    'req_json'   => $reqJsonData,
+                    'res_json'   => json_encode($resJsonData, JSON_UNESCAPED_UNICODE),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $trackingId = DB::table('push_notifications')->insertGetId([
+                    'user_id'    => '0',
+                    'sent_by'    => $creUserId,
+                    'title'      => $title,
+                    'body'       => $body,
+                    'status'     => 1,
+                    'req_json'   => $reqJsonData,
+                    'res_json'   => json_encode($resJsonData, JSON_UNESCAPED_UNICODE),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'deletes'    => 0,
+                ]);
+            }
 
             return response()->json([
-                'status'      => true,
-                'message'     => 'Notifications to drivers sent to queue!',
-                'tracking_id' => $trackingId
+                'status'        => true,
+                'message'       => 'Notifications to drivers sent successfully!',
+                'tracking_id'   => $trackingId,
+                'res_json'      => $resJsonData
             ], 200);
 
         } catch (\Throwable $e) {
