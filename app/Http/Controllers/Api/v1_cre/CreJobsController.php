@@ -349,12 +349,10 @@ class CreJobsController extends Controller
                             continue;
                         }
                     } catch (\Throwable $e) {
-                        // ignore parse errors
                     }
                 }
                 $jobNo = $job->job_no ?? ('GR-' . $job->id);
 
-                // Source determination
                 $source = "From Website";
                 if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
                     $source = "From Customer App";
@@ -362,17 +360,14 @@ class CreJobsController extends Controller
                     $source = "From Driver App";
                 }
 
-                // Badge determination
                 $badge = "Regular";
                 if (strtolower((string)$job->global_type) === 'schedule' || strtolower((string)$job->job_status) === 'schedule') {
                     $badge = "Schedule";
                 }
 
-                // Addresses
                 $from = !empty($job->pick_address) ? $job->pick_address : ($job->from_place ?? '');
                 $to   = !empty($job->drop_address) ? $job->drop_address : ($job->to_place ?? '');
 
-                // Date & Time formatting
                 $dateStr = $job->pickup_date ?? $job->created_at ?? null;
                 $formattedDate = '';
                 $formattedTime = '';
@@ -444,7 +439,6 @@ class CreJobsController extends Controller
 
             $jobNo = $job->job_no ?? ('GR-' . $job->id);
 
-            // Source determination
             $source = "From Website";
             if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
                 $source = "From Customer App";
@@ -452,17 +446,14 @@ class CreJobsController extends Controller
                 $source = "From Driver App";
             }
 
-            // Badge determination
             $badge = "Regular";
             if (strtolower((string)$job->global_type) === 'schedule' || strtolower((string)$job->job_status) === 'schedule') {
                 $badge = "Schedule";
             }
 
-            // Addresses
             $from = !empty($job->pick_address) ? $job->pick_address : ($job->from_place ?? '');
             $to   = !empty($job->drop_address) ? $job->drop_address : ($job->to_place ?? '');
 
-            // Date & Time formatting
             $dateStr = $job->pickup_date ?? $job->created_at ?? null;
             $formattedDate = '';
             $formattedTime = '';
@@ -477,14 +468,12 @@ class CreJobsController extends Controller
                 }
             }
 
-            // Decode user_details JSON string if present
             $details = [];
             if (!empty($job->user_details)) {
                 $details = is_string($job->user_details) ? json_decode($job->user_details, true) : (array)$job->user_details;
             }
             if (!is_array($details)) $details = [];
 
-            // Passengers & Luggage logic
             $rawPass = $job->pass_count ?? ($details['pass_count'] ?? 1);
             if (is_string($rawPass) && strtolower(trim($rawPass)) === 'mini') {
                 $passengers = "Mini";
@@ -495,14 +484,12 @@ class CreJobsController extends Controller
                 $passengers = (string) $rawPass;
             }
 
-            // Luggage logic (only for Website jobs)
             $luggage = null;
             if ($source === "From Website") {
                 $luggCount = (int) ($details['lugg_count'] ?? ($details['luggage'] ?? 0));
                 $luggage   = $luggCount . ($luggCount == 1 ? ' Luggage' : ' Luggage');
             }
 
-            // Vehicle Type / Cab Type logic (Return null if not available)
             $vehicleType = null;
             if (!empty($details['cab_type'])) {
                 $vehicleType = $details['cab_type'];
@@ -514,7 +501,6 @@ class CreJobsController extends Controller
                 $vehicleType = $job->cab_type;
             }
 
-            // Job Type logic
             $rawJobType = $details['job_type'] ?? ($details['trip_type'] ?? ($job->job_type ?? 'One Way'));
             $cleanType  = strtolower(trim((string)$rawJobType));
             if ($cleanType === 'oneway') {
@@ -525,10 +511,8 @@ class CreJobsController extends Controller
                 $jobType = ucfirst((string)$rawJobType);
             }
 
-            // Special Notes
             $specialNotes = !empty($job->job_remark) ? $job->job_remark : ($job->comments ?? ($details['special_notes'] ?? ($details['notes'] ?? '')));
 
-            // Customer Details
             $customerName   = '';
             $customerMobile = '';
             $profileImg     = null;
@@ -543,7 +527,6 @@ class CreJobsController extends Controller
                 }
             }
 
-            // Fallback for Website job customer details
             if (empty($customerName) && !empty($details)) {
                 $customerName   = $details['name'] ?? 'Website Customer';
                 $customerMobile = $details['mobile'] ?? '';
@@ -669,7 +652,6 @@ class CreJobsController extends Controller
                 'created_at'   => Carbon::now()
             ]);
 
-            // WhatsApp Notification Logic for Customer
             $url = "https://graph.facebook.com/" . env('FB_WHATSAPP_VERSION', 'v24.0') . "/" . env('FB_WHATSAPP_PHONE_NUMBER_ID') . "/messages";
             $templateName = 'admin_cancle_jobs';
             $template = DB::table('wamail_templates')->where('name', $templateName)->first();
@@ -718,7 +700,6 @@ class CreJobsController extends Controller
                 }
             }
 
-            // Dispatch background FCM push notifications for bidders
             $jobDataArr = (array) $get_job;
             $biddersIds = $get_bidders_ids;
             $controller = $this;
