@@ -1046,6 +1046,7 @@ class CreJobsController extends Controller
                     'c.fare_breakdown',
                     'c.fare',
                     'c.user_details',
+                    'c.preview_hash',
                     'd.name as driver_name',
                     'd.mobile as driver_mobile',
                     'cf.rating as fb_rating'
@@ -1148,7 +1149,7 @@ class CreJobsController extends Controller
             if (!empty($driverIds)) {
                 $drvs = DB::table('user_register')
                     ->whereIn('id', array_keys($driverIds))
-                    ->select(['id', 'name', 'mobile', 'email'])
+                    ->select(['id', 'name', 'mobile', 'email', 'cab_type'])
                     ->get();
                 foreach ($drvs as $d) {
                     $driverData[$d->id] = (array)$d;
@@ -1235,12 +1236,15 @@ class CreJobsController extends Controller
 
                 $rawPass = $rawRow->pass_count ?? 1;
                 if (is_string($rawPass) && strtolower(trim($rawPass)) === 'mini') {
-                    $passengers = "Mini";
+                    $passengers = "5 Passengers";
+                    $passCount = 5;
                 } elseif (is_numeric($rawPass)) {
                     $count = (int) $rawPass;
                     $passengers = $count . ($count == 1 ? ' Passenger' : ' Passengers');
+                    $passCount = $count;
                 } else {
                     $passengers = (string) $rawPass;
+                    $passCount = 5;
                 }
 
                 $totalFare = 0;
@@ -1317,6 +1321,9 @@ class CreJobsController extends Controller
                     $statusLabel = 'Incomplete';
                 }
 
+                $previewHash = $rawRow->preview_hash ?? null;
+                $previewUrl = !empty($previewHash) ? (env('APP_URL') . 'booking-preview/' . $previewHash) : null;
+
                 $finalJobs[] = [
                     'job_id'             => $rawRow->id,
                     'job_no'             => $jobNo,
@@ -1328,6 +1335,9 @@ class CreJobsController extends Controller
                     'date'               => $formattedDate,
                     'time'               => $formattedTime,
                     'passengers'         => $passengers,
+                    'pass_count'         => $passCount,
+                    'preview_hash'       => $previewHash,
+                    'preview_url'        => $previewUrl,
                     'amount'             => round($baseFare, 2),
                     'customer_paid'      => round($totalFare, 2),
                     'driver_amount'      => round($driverEarned, 2),
@@ -1338,6 +1348,7 @@ class CreJobsController extends Controller
                         'id'                  => $assignedTo,
                         'name'                => $rawRow->driver_name ?? ($driverData[$assignedTo]['name'] ?? 'Unassigned'),
                         'mobile'              => $rawRow->driver_mobile ?? ($driverData[$assignedTo]['mobile'] ?? ''),
+                        'cab_type'            => $driverData[$assignedTo]['cab_type'] ?? 'Standard',
                         'rating'              => $rawRow->fb_rating ?? null,
                         'lat'                 => $driverLoc['lat'] ?? null,
                         'lng'                 => $driverLoc['lng'] ?? null,
