@@ -192,7 +192,7 @@ class CreJobsController extends Controller
         return $result;
     }
 
-    private function sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, $request)
+    public function sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, $request = null)
     {
         $bodyParameters = [];
         foreach ($parameters as $param) {
@@ -279,21 +279,38 @@ class CreJobsController extends Controller
             "template"          => $templatePayload
         ];
 
-        $response = Http::withToken(env('FB_WHATSAPP_TOKEN'))->acceptJson()->post($url, $payload);
+        $reqTime = now();
+        Log::info('CRE WhatsApp Request Payload:', ['to' => $cleanPhone, 'payload' => $payload]);
 
-        if (!$response->successful()) {
-            Log::error('CRE WhatsApp API Error:', ['status' => $response->status(), 'response' => $response->json()]);
+        $token = env('FB_WHATSAPP_TOKEN');
+        $response = Http::withToken($token)->acceptJson()->post($url, $payload);
+
+        $resTime = now();
+        $body = $response->json();
+        $isSuccess = $response->successful();
+        $messageId = $body['messages'][0]['id'] ?? null;
+
+        Log::info('CRE WhatsApp Response:', ['status' => $response->status(), 'response' => $body]);
+
+        try {
+            DB::table('smslog')->insert([
+                'gateway'        => 'fbWhatsapp',
+                'subject'        => 'Job Cancelled by CRE',
+                'details'        => json_encode($parameters),
+                'mobile'         => $cleanPhone,
+                'ip'             => ($request && method_exists($request, 'ip')) ? $request->ip() : '',
+                'datetime'       => now(),
+                'token_response' => json_encode($body),
+                'status'         => $isSuccess ? 'sent' : 'failed',
+                'reference_id'   => $messageId ?? '',
+                'site'           => 'CUSTOMER',
+                'REQ_Time'       => $reqTime,
+                'RES_Time'       => $resTime,
+                'smsdetails'     => json_encode($payload),
+            ]);
+        } catch (\Throwable $se) {
+            Log::error('CRE smslog insert error: ' . $se->getMessage());
         }
-
-        DB::table('smslog')->insert([
-            'gateway'    => 'fbWhatsapp',
-            'subject'    => 'Job Cancelled by CRE',
-            'details'    => json_encode($parameters),
-            'resp_data'  => json_encode($response->json()),
-            'status'     => $response->successful() ? 'sent' : 'failed',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 
     public function getJobList(Request $request)
@@ -674,6 +691,13 @@ class CreJobsController extends Controller
                     }
                 }
 
+                Log::info('CRE Cancel Job Customer Resolved:', [
+                    'user_id' => $get_job_obj->user_id,
+                    'customerName' => $customerName,
+                    'customerMobile' => $customerMobile,
+                    'template_found' => !empty($template)
+                ]);
+
                 if (!empty($customerMobile)) {
                     $cleanPhone = preg_replace('/[^0-9]/', '', (string)$customerMobile);
                     if (strlen($cleanPhone) === 10) {
@@ -689,12 +713,21 @@ class CreJobsController extends Controller
 
                         $parameters = [$customerName, $jobNo, $pickupLoc, $dropLoc, $formattedDate];
 
+                        Log::info('CRE Cancel Job sending WhatsApp:', [
+                            'cleanPhone' => $cleanPhone,
+                            'parameters' => $parameters
+                        ]);
+
                         try {
                             $controller->sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, null);
                         } catch (\Throwable $we) {
                             Log::error('CRE WhatsApp Customer Exception: ' . $we->getMessage());
                         }
+                    } else {
+                        Log::warning('CRE Cancel Job cleanPhone is empty for mobile: ' . $customerMobile);
                     }
+                } else {
+                    Log::warning('CRE Cancel Job customerMobile is empty for job id: ' . $get_job_obj->id);
                 }
 
                 if (count($get_bidders_ids) > 0) {
