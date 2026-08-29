@@ -182,11 +182,23 @@ class CreJobsController extends Controller
             }
             if (!is_array($details)) $details = [];
 
-            // Passengers & Luggage
-            $passCount = $job->pass_count ?? ($details['pass_count'] ?? 1);
-            $luggCount = $details['lugg_count'] ?? ($details['luggage'] ?? 0);
-            $passengers = $passCount . ($passCount == 1 ? ' Passenger' : ' Passengers');
-            $luggage    = $luggCount . ($luggCount == 1 ? ' Luggage' : ' Luggage');
+            // Passengers & Luggage logic
+            $rawPass = $job->pass_count ?? ($details['pass_count'] ?? 1);
+            if (is_string($rawPass) && strtolower(trim($rawPass)) === 'mini') {
+                $passengers = "Mini";
+            } elseif (is_numeric($rawPass)) {
+                $count = (int) $rawPass;
+                $passengers = $count . ($count == 1 ? ' Passenger' : ' Passengers');
+            } else {
+                $passengers = (string) $rawPass;
+            }
+
+            // Luggage logic (only for Website jobs)
+            $luggage = null;
+            if ($source === "From Website") {
+                $luggCount = (int) ($details['lugg_count'] ?? ($details['luggage'] ?? 0));
+                $luggage   = $luggCount . ($luggCount == 1 ? ' Luggage' : ' Luggage');
+            }
 
             // Vehicle Type / Cab Type
             $vehicleType = $details['cab_type'] ?? ($details['car_type'] ?? ($job->job_type ?? 'Saloon'));
