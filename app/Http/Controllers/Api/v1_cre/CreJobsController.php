@@ -1334,7 +1334,6 @@ class CreJobsController extends Controller
                 }
 
                 $previewHash = $rawRow->preview_hash ?? null;
-                $previewUrl = !empty($previewHash) ? (env('APP_URL') . 'booking-preview/' . $previewHash) : null;
 
                 $finalJobs[] = [
                     'job_id'             => $rawRow->id,
@@ -1349,7 +1348,6 @@ class CreJobsController extends Controller
                     'passengers'         => $passengers,
                     'pass_count'         => $passCount,
                     'preview_hash'       => $previewHash,
-                    'preview_url'        => $previewUrl,
                     'amount'             => round($baseFare, 2),
                     'customer_paid'      => round($totalFare, 2),
                     'driver_amount'      => round($driverEarned, 2),
