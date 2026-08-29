@@ -777,4 +777,25 @@ class CreJobsController extends Controller
             ], 500);
         }
     }
+
+    public function getDistrictList(Request $request)
+    {
+        try {
+            $districts = DB::table('districts')
+                ->select(['id', 'district_name'])
+                ->get();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Districts list retrieved successfully',
+                'data'    => $districts
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to fetch district list: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
