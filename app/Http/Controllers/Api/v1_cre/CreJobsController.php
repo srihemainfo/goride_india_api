@@ -895,7 +895,8 @@ class CreJobsController extends Controller
                         $query->where('districts_id', $districtId);
                     }
 
-                    $query->select('id', 'name', 'mobile', 'fcm_token');
+                    $query->select('id', 'name', 'mobile', 'fcm_token')
+                          ->orderBy('id', 'asc');
 
                     $query->chunk(500, function ($drivers) use ($controller, $accessToken, $title, $body, $jobId, $jobNo, &$successCount, &$failureCount, &$deliveredList, &$notDeliveredList) {
                         foreach ($drivers as $user) {
