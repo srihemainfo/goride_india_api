@@ -86,8 +86,8 @@ class CreJobsController extends Controller
                 }
 
                 $unassignedJobs[] = [
-                    'raw_id' => $job->id,
-                    'job_id' => $jobNo,
+                    'job_id' => $job->id,
+                    'job_no' => $jobNo,
                     'source' => $source,
                     'badge'  => $badge,
                     'from'   => $from,
