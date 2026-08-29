@@ -6,9 +6,296 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class CreJobsController extends Controller
 {
+    public $serviceAccountPath;
+    public $serviceAccount;
+
+    public function __construct()
+    {
+        $this->serviceAccountPath = storage_path('app/firebase/firebase-config.json');
+
+        if (file_exists($this->serviceAccountPath)) {
+            $this->serviceAccount = json_decode(file_get_contents($this->serviceAccountPath), true);
+        }
+    }
+
+    public function getAccessToken()
+    {
+        if (empty($this->serviceAccount)) {
+            return null;
+        }
+
+        $header = base64_encode(json_encode([
+            'alg' => 'RS256',
+            'typ' => 'JWT'
+        ]));
+
+        $now = time();
+        $claimSet = [
+            'iss'   => $this->serviceAccount['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/cloud-platform',
+            'aud'   => $this->serviceAccount['token_uri'],
+            'iat'   => $now,
+            'exp'   => $now + 3600
+        ];
+
+        $claimSetEncoded = base64_encode(json_encode($claimSet));
+        $signatureInput  = "$header.$claimSetEncoded";
+
+        openssl_sign(
+            $signatureInput,
+            $signature,
+            openssl_pkey_get_private($this->serviceAccount['private_key']),
+            OPENSSL_ALGO_SHA256
+        );
+
+        $jwt = "$signatureInput." . str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+
+        $postFields = http_build_query([
+            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            'assertion'  => $jwt
+        ]);
+
+        $ch = curl_init($this->serviceAccount['token_uri']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $responseData = json_decode($response, true);
+        return $responseData['access_token'] ?? null;
+    }
+
+    public function getFcm($id = null, $loc = null)
+    {
+        if ($id) {
+            $get_tokens = DB::table('user_register')
+                ->whereIn('id', $id)
+                ->where('deletes', '0')
+                ->where('notify', 1)
+                ->get();
+
+            $tokens = [];
+            foreach ($get_tokens as $user) {
+                if (!empty($user->fcm_token)) {
+                    $tokens[] = $user->fcm_token;
+                }
+                if (!empty($user->browser_fcm_token)) {
+                    $tokens[] = $user->browser_fcm_token;
+                }
+            }
+            return $tokens;
+        }
+
+        return [];
+    }
+
+    public function sendFCM($accessToken, $fcmToken, $title, $body, $data = [])
+    {
+        $stringData = [];
+        foreach ($data as $key => $value) {
+            $validKey = preg_replace('/[^a-zA-Z0-9_]/', '_', $key);
+            $stringData[$validKey] = (string) $value;
+        }
+
+        $stringData['title'] = $title;
+        $stringData['body']  = $body;
+
+        $url = 'https://fcm.googleapis.com/v1/projects/' . $this->serviceAccount['project_id'] . '/messages:send';
+
+        $payload = [
+            'validate_only' => false,
+            'message' => [
+                'token' => $fcmToken,
+                'notification' => [
+                    'title' => $title,
+                    'body'  => $body,
+                ],
+                'android' => [
+                    'priority' => 'high',
+                    'ttl'      => '86400s',
+                    'notification' => [
+                        'channel_id' => 'new_job_channel',
+                        'sound'      => 'custom_notification',
+                        'color'      => '#FF6B35',
+                    ],
+                ],
+                'apns' => [
+                    'headers' => [
+                        'apns-priority'  => '10',
+                        'apns-push-type' => 'alert',
+                    ],
+                    'payload' => [
+                        'aps' => [
+                            'alert' => [
+                                'title' => $title,
+                                'body'  => $body,
+                            ],
+                            'sound' => 'custom_notification.wav',
+                            'badge' => 1
+                        ]
+                    ]
+                ],
+                'data' => $stringData
+            ]
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($result, true);
+    }
+
+    private function parseFirestoreFields(array $fields): array
+    {
+        $result = [];
+        foreach ($fields as $key => $value) {
+            if (isset($value['stringValue'])) {
+                $result[$key] = $value['stringValue'];
+            } elseif (isset($value['integerValue'])) {
+                $result[$key] = (int) $value['integerValue'];
+            } elseif (isset($value['doubleValue'])) {
+                $result[$key] = (float) $value['doubleValue'];
+            } elseif (isset($value['booleanValue'])) {
+                $result[$key] = (bool) $value['booleanValue'];
+            } elseif (isset($value['timestampValue'])) {
+                $result[$key] = Carbon::parse(
+                    $value['timestampValue'],
+                    'UTC'
+                )->setTimezone(config('app.timezone'))->toDateTimeString();
+            } elseif (isset($value['mapValue']['fields'])) {
+                $result[$key] = $this->parseFirestoreFields(
+                    $value['mapValue']['fields']
+                );
+            } elseif (isset($value['arrayValue']['values'])) {
+                $result[$key] = array_map(function ($v) {
+                    return $this->parseFirestoreFields([$v])[0] ?? null;
+                }, $value['arrayValue']['values']);
+            } else {
+                $result[$key] = null;
+            }
+        }
+        return $result;
+    }
+
+    private function sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, $request)
+    {
+        $bodyParameters = [];
+        foreach ($parameters as $param) {
+            if ($param !== null && $param !== '') {
+                $bodyParameters[] = [
+                    "type" => "text",
+                    "text" => (string) $param
+                ];
+            }
+        }
+
+        $components = [];
+
+        if ($template && !empty($template->header_image)) {
+            $components[] = [
+                "type" => "header",
+                "parameters" => [
+                    [
+                        "type"  => "image",
+                        "image" => [
+                            "link" => $template->header_image
+                        ]
+                    ]
+                ]
+            ];
+        }
+
+        if (!empty($bodyParameters)) {
+            $components[] = [
+                "type"       => "body",
+                "parameters" => $bodyParameters
+            ];
+        }
+
+        if ($template && !empty($template->variables_json)) {
+            $buttonsConfig = json_decode($template->variables_json, true);
+            if (!empty($buttonsConfig['buttons'])) {
+                foreach ($buttonsConfig['buttons'] as $index => $btn) {
+                    if ($btn['type'] === 'COPY_CODE') {
+                        $components[] = [
+                            "type"       => "button",
+                            "sub_type"   => "url",
+                            "index"      => (string)$index,
+                            "parameters" => [
+                                [
+                                    "type" => "text",
+                                    "text" => (string)($parameters[0] ?? '123456')
+                                ]
+                            ]
+                        ];
+                    }
+                    if ($btn['type'] === 'URL' && strpos($btn['url'] ?? '', '{{1}}') !== false) {
+                        $components[] = [
+                            "type"       => "button",
+                            "sub_type"   => "url",
+                            "index"      => (string)$index,
+                            "parameters" => [
+                                [
+                                    "type" => "text",
+                                    "text" => (string)($parameters[0] ?? '')
+                                ]
+                            ]
+                        ];
+                    }
+                }
+            }
+        }
+
+        $templatePayload = [
+            "name"     => $templateName,
+            "language" => [
+                "code" => "en_US"
+            ]
+        ];
+
+        if (!empty($components)) {
+            $templatePayload["components"] = $components;
+        }
+
+        $payload = [
+            "messaging_product" => "whatsapp",
+            "to"                => $cleanPhone,
+            "type"              => "template",
+            "template"          => $templatePayload
+        ];
+
+        $response = Http::withToken(env('FB_WHATSAPP_TOKEN'))->acceptJson()->post($url, $payload);
+
+        if (!$response->successful()) {
+            Log::error('CRE WhatsApp API Error:', ['status' => $response->status(), 'response' => $response->json()]);
+        }
+
+        DB::table('smslog')->insert([
+            'gateway'    => 'fbWhatsapp',
+            'subject'    => 'Job Cancelled by CRE',
+            'details'    => json_encode($parameters),
+            'resp_data'  => json_encode($response->json()),
+            'status'     => $response->successful() ? 'sent' : 'failed',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     public function getJobList(Request $request)
     {
         try {
@@ -298,6 +585,188 @@ class CreJobsController extends Controller
             return response()->json([
                 'status'  => false,
                 'message' => 'Failed to fetch job details: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function cancelJob(Request $request)
+    {
+        try {
+            $jobId = $request->input('job_id') ?? $request->input('job_no');
+
+            if (!$jobId) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Job ID is required'
+                ], 422);
+            }
+
+            $creUser = $request->get('cre_user');
+            $cancelledBy = $request->input('cancelled_by') ?? ($creUser->name ?? ($creUser->email ?? 'CRE'));
+            $cancelReason = $request->input('cancel_reason') ?? 'Cancelled by CRE';
+
+            $get_job = DB::table('cus_job_temp')
+                ->where(function ($query) use ($jobId) {
+                    $query->where('job_no', $jobId)
+                          ->orWhere('id', $jobId);
+                })
+                ->where('deletes', '0')
+                ->first();
+
+            if (!$get_job) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Job Not Found'
+                ], 404);
+            }
+
+            if (strtolower((string) $get_job->job_status) === 'cancelled') {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Job is already cancelled'
+                ], 400);
+            }
+
+            $get_bidders_ids = [];
+
+            if (!empty($this->serviceAccount) && !empty($get_job->job_no)) {
+                try {
+                    $firebase = new \App\Services\FirebaseJobService(
+                        $this->serviceAccount['project_id'],
+                        $this->getAccessToken()
+                    );
+
+                    $jobDoc = $firebase->getJob($get_job->job_no);
+                    $jobData = $jobDoc ? $this->parseFirestoreFields($jobDoc) : [];
+                    $get_bidders_ids = array_keys($jobData['bids_details'] ?? []);
+
+                    $firebase->deleteJob($get_job->job_no);
+                } catch (\Throwable $fe) {
+                    Log::error('CRE Cancel Job Firebase Error: ' . $fe->getMessage());
+                }
+            }
+
+            DB::table('cus_job_temp')
+                ->where('id', $get_job->id)
+                ->update([
+                    'job_status'     => 'cancelled',
+                    'confirm_status' => 0
+                ]);
+
+            DB::table('open_jobs')
+                ->where('job_no', $get_job->job_no)
+                ->orWhere('id', $get_job->id)
+                ->update([
+                    'job_status'     => 'cancelled',
+                    'confirm_status' => 0
+                ]);
+
+            DB::table('job_cancellations')->insert([
+                'job_id'       => $get_job->id,
+                'customer_id'  => $get_job->user_id,
+                'cancelled_by' => $cancelledBy,
+                'reason'       => $cancelReason,
+                'created_at'   => Carbon::now()
+            ]);
+
+            // WhatsApp Notification Logic for Customer
+            $url = "https://graph.facebook.com/" . env('FB_WHATSAPP_VERSION', 'v24.0') . "/" . env('FB_WHATSAPP_PHONE_NUMBER_ID') . "/messages";
+            $templateName = 'admin_cancle_jobs';
+            $template = DB::table('wamail_templates')->where('name', $templateName)->first();
+
+            if ($get_job->user_id == 0) {
+                $userDetails = json_decode($get_job->user_details ?? '', true);
+                $customerName = $userDetails['name'] ?? 'Customer';
+                $customerPhone = $userDetails['mobile'] ?? '';
+
+                if (!empty($customerPhone)) {
+                    $cleanPhone = preg_replace('/[^0-9]/', '', $customerPhone);
+                    if (strlen($cleanPhone) === 10) {
+                        $cleanPhone = '91' . $cleanPhone;
+                    }
+
+                    if (Controller::checkWhatsApp(['mobile' => $cleanPhone])) {
+                        $pickupLoc = $get_job->pick_address ?? $get_job->from_place ?? 'Unknown Location';
+                        $dropLoc = $get_job->drop_address ?? $get_job->to_place ?? 'Unknown Location';
+                        $rawDate = $get_job->pickup_date ?? $get_job->day ?? $get_job->created_at ?? null;
+                        $formattedDate = !empty($rawDate) ? Carbon::parse($rawDate)->format('d-m-Y h:i A') : 'Not Specified';
+
+                        $parameters = [$customerName, $get_job->job_no, $pickupLoc, $dropLoc, $formattedDate];
+                        $this->sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, $request);
+                    }
+                }
+            } else {
+                $get_u = DB::table('customer_register')->where('id', $get_job->user_id)->where('deletes', 0)->first();
+                if (!$get_u) {
+                    $get_u = DB::table('user_register')->where('id', $get_job->user_id)->where('deletes', '0')->first();
+                }
+
+                if ($get_u) {
+                    $cleanPhone = preg_replace('/[^0-9]/', '', $get_u->mobile);
+                    if (strlen($cleanPhone) === 10) {
+                        $cleanPhone = '91' . $cleanPhone;
+                    }
+
+                    if (Controller::checkWhatsApp(['mobile' => $get_u->mobile])) {
+                        $formattedDate = Carbon::parse($get_job->pickup_date)->format('d-m-Y h:i A');
+                        $pickupLoc = $get_job->pick_address ?? $get_job->from_place ?? 'Unknown Location';
+                        $dropLoc = $get_job->drop_address ?? $get_job->to_place ?? 'Unknown Location';
+                        $parameters = [$get_u->name, $get_job->job_no, $pickupLoc, $dropLoc, $formattedDate];
+
+                        $this->sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, $request);
+                    }
+                }
+            }
+
+            // Dispatch background FCM push notifications for bidders
+            $jobDataArr = (array) $get_job;
+            $biddersIds = $get_bidders_ids;
+            $controller = $this;
+
+            dispatch(function () use ($jobDataArr, $biddersIds, $controller) {
+                if (count($biddersIds) > 0) {
+                    $accessToken = $controller->getAccessToken();
+                    $get_job_obj = (object) $jobDataArr;
+                    $fcmTokens   = $controller->getFcm($biddersIds);
+
+                    if ($fcmTokens && count($fcmTokens) && $accessToken) {
+                        foreach ($fcmTokens as $token) {
+                            try {
+                                $controller->sendFCM(
+                                    $accessToken,
+                                    $token,
+                                    'Your Bid Has Been Cancelled',
+                                    'Job ID ' . ($get_job_obj->job_no ?? ('GR-' . $get_job_obj->id)) . ': Unfortunately, the job has been cancelled.',
+                                    [
+                                        'caller' => 'CRE',
+                                        'type'   => 'cancel_notification',
+                                        'url'    => env('APP_URL') . 'jobs',
+                                    ]
+                                );
+                            } catch (\Throwable $e) {
+                                Log::error('CRE FCM send error for token: ' . $token, [
+                                    'message' => $e->getMessage()
+                                ]);
+                            }
+                        }
+                    }
+                }
+            });
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Job cancelled successfully.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('CRE cancelJob Exception: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to cancel job: ' . $e->getMessage()
             ], 500);
         }
     }

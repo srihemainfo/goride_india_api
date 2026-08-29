@@ -12,4 +12,5 @@ Route::middleware(['cre.auth'])->group(function () {
     Route::get('/job-list', [CreJobsController::class, 'getJobList']);
     Route::get('/job-details', [CreJobsController::class, 'getJobDetails']);
     Route::post('/job-details', [CreJobsController::class, 'getJobDetails']);
+    Route::post('/cancel-job', [CreJobsController::class, 'cancelJob']);
 });
