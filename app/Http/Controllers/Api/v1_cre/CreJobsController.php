@@ -200,30 +200,44 @@ class CreJobsController extends Controller
                 $luggage   = $luggCount . ($luggCount == 1 ? ' Luggage' : ' Luggage');
             }
 
-            // Vehicle Type / Cab Type
-            $vehicleType = $details['cab_type'] ?? ($details['car_type'] ?? ($job->job_type ?? 'Saloon'));
+            // Vehicle Type / Cab Type logic (Do NOT fallback to job_type)
+            $vehicleType = 'Saloon';
+            if (!empty($details['cab_type'])) {
+                $vehicleType = $details['cab_type'];
+            } elseif (!empty($details['car_type'])) {
+                $vehicleType = $details['car_type'];
+            } elseif (!empty($job->car_type)) {
+                $vehicleType = $job->car_type;
+            } elseif (!empty($job->cab_type)) {
+                $vehicleType = $job->cab_type;
+            }
 
-            // Job Type & Trip Type
-            $jobType  = $details['job_type'] ?? ($job->job_type ?? 'Airport Transfer');
-            $tripType = $details['trip_type'] ?? 'One Way';
+            // Job Type logic
+            $rawJobType = $details['job_type'] ?? ($details['trip_type'] ?? ($job->job_type ?? 'One Way'));
+            $cleanType  = strtolower(trim((string)$rawJobType));
+            if ($cleanType === 'oneway') {
+                $jobType = "One Way";
+            } elseif ($cleanType === 'roundtrip') {
+                $jobType = "Round Trip";
+            } else {
+                $jobType = ucfirst((string)$rawJobType);
+            }
 
             // Special Notes
             $specialNotes = !empty($job->job_remark) ? $job->job_remark : ($job->comments ?? ($details['special_notes'] ?? ($details['notes'] ?? '')));
 
             // Customer Details
-            $customerName = '';
+            $customerName   = '';
             $customerMobile = '';
-            $customerDialCode = '';
-            $profileImg = null;
+            $profileImg     = null;
 
             $userId = (int)($job->user_id ?? 0);
             if ($userId > 0) {
                 $customer = DB::table('customer_register')->where('id', $userId)->first();
                 if ($customer) {
-                    $customerName     = $customer->name ?? '';
-                    $customerMobile   = $customer->mobile ?? '';
-                    $customerDialCode = $customer->dialCode ?? '';
-                    $profileImg       = $customer->img_url ?? null;
+                    $customerName   = $customer->name ?? '';
+                    $customerMobile = $customer->mobile ?? '';
+                    $profileImg     = $customer->img_url ?? null;
                 }
             }
 
@@ -233,15 +247,15 @@ class CreJobsController extends Controller
                 $customerMobile = $details['mobile'] ?? '';
             }
 
-            $fullMobile = !empty($customerDialCode) ? ($customerDialCode . ' ' . $customerMobile) : $customerMobile;
+            $cleanMobile = trim((string) $customerMobile);
+            $cleanDigits = preg_replace('/[^0-9+]/', '', $cleanMobile);
 
             $customerDetails = [
                 'name'            => $customerName ?: 'Customer',
-                'mobile'          => $fullMobile,
-                'dial_code'       => $customerDialCode,
+                'mobile'          => $cleanMobile,
                 'profile_img'     => $profileImg,
-                'call_number'     => preg_replace('/[^0-9+]/', '', $fullMobile),
-                'whatsapp_number' => preg_replace('/[^0-9+]/', '', $fullMobile),
+                'call_number'     => $cleanDigits,
+                'whatsapp_number' => $cleanDigits,
             ];
 
             return response()->json([
@@ -259,7 +273,6 @@ class CreJobsController extends Controller
                     'passengers'       => $passengers,
                     'luggage'          => $luggage,
                     'job_type'         => $jobType,
-                    'trip_type'        => $tripType,
                     'vehicle_type'     => $vehicleType,
                     'special_notes'    => $specialNotes,
                     'customer_details' => $customerDetails,
