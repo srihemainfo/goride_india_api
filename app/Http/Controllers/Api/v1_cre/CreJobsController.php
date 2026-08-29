@@ -200,8 +200,8 @@ class CreJobsController extends Controller
                 $luggage   = $luggCount . ($luggCount == 1 ? ' Luggage' : ' Luggage');
             }
 
-            // Vehicle Type / Cab Type logic (Do NOT fallback to job_type)
-            $vehicleType = 'Saloon';
+            // Vehicle Type / Cab Type logic (Return null if not available)
+            $vehicleType = null;
             if (!empty($details['cab_type'])) {
                 $vehicleType = $details['cab_type'];
             } elseif (!empty($details['car_type'])) {
