@@ -31,12 +31,11 @@ class CreJobsController extends Controller
                     'job_no',
                     'global_type',
                     'job_status',
-                    'c_from',
-                    'from_address',
-                    'c_to',
-                    'to_address',
+                    'pick_address',
+                    'drop_address',
+                    'from_place',
+                    'to_place',
                     'pickup_date',
-                    'pickup_time',
                     'created_at'
                 ])
                 ->where('deletes', '0')
@@ -68,8 +67,8 @@ class CreJobsController extends Controller
                 }
 
                 // Addresses
-                $from = !empty($job->c_from) ? $job->c_from : ($job->from_address ?? '');
-                $to   = !empty($job->c_to)   ? $job->c_to   : ($job->to_address ?? '');
+                $from = !empty($job->pick_address) ? $job->pick_address : ($job->from_place ?? '');
+                $to   = !empty($job->drop_address) ? $job->drop_address : ($job->to_place ?? '');
 
                 // Date & Time formatting
                 $dateStr = $job->pickup_date ?? $job->created_at ?? null;
@@ -83,12 +82,7 @@ class CreJobsController extends Controller
                         $formattedTime = $dt->format('h:i A');
                     } catch (\Throwable $e) {
                         $formattedDate = (string) $dateStr;
-                        $formattedTime = (string) ($job->pickup_time ?? '');
                     }
-                }
-
-                if (!empty($job->pickup_time) && empty($formattedTime)) {
-                    $formattedTime = (string) $job->pickup_time;
                 }
 
                 $unassignedJobs[] = [
