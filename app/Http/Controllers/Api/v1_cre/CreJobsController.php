@@ -413,7 +413,7 @@ class CreJobsController extends Controller
     public function getJobDetails(Request $request)
     {
         try {
-            $jobId = $request->input('job_id') ?? $request->input('id');
+            $jobId = $request->input('job_id');
 
             if (!$jobId) {
                 return response()->json([
@@ -423,11 +423,8 @@ class CreJobsController extends Controller
             }
 
             $job = DB::table('cus_job_temp')
+                ->where('id', $jobId)
                 ->where('deletes', '0')
-                ->where(function ($q) use ($jobId) {
-                    $q->where('id', $jobId)
-                      ->orWhere('job_no', $jobId);
-                })
                 ->first();
 
             if (!$job) {
@@ -575,7 +572,7 @@ class CreJobsController extends Controller
     public function cancelJob(Request $request)
     {
         try {
-            $jobId = $request->input('job_id') ?? $request->input('job_no');
+            $jobId = $request->input('job_id');
 
             if (!$jobId) {
                 return response()->json([
@@ -589,10 +586,7 @@ class CreJobsController extends Controller
             $cancelReason = $request->input('cancel_reason') ?? 'Cancelled by CRE';
 
             $get_job = DB::table('cus_job_temp')
-                ->where(function ($query) use ($jobId) {
-                    $query->where('job_no', $jobId)
-                          ->orWhere('id', $jobId);
-                })
+                ->where('id', $jobId)
                 ->where('deletes', '0')
                 ->first();
 
