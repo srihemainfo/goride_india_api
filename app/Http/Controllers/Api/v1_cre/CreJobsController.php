@@ -1030,16 +1030,28 @@ class CreJobsController extends Controller
 
             $query = DB::table('cus_job_temp as c')
                 ->select([
-                    'c.*',
+                    'c.id',
+                    'c.job_no',
+                    'c.job_status',
+                    'c.global_type',
+                    'c.user_id',
+                    'c.assigned_to',
+                    'c.pick_address',
+                    'c.drop_address',
+                    'c.from_place',
+                    'c.to_place',
+                    'c.pickup_date',
+                    'c.created_at',
+                    'c.pass_count',
+                    'c.fare_breakdown',
+                    'c.fare',
+                    'c.user_details',
                     'd.name as driver_name',
                     'd.mobile as driver_mobile',
-                    'cf.rating as fb_rating',
-                    'cf.review as fb_review',
-                    'jc.created_at as c_cancelled_at'
+                    'cf.rating as fb_rating'
                 ])
                 ->leftJoin('user_register as d', 'c.assigned_to', '=', 'd.id')
                 ->leftJoin('customer_feedback as cf', 'c.id', '=', 'cf.job_id')
-                ->leftJoin('job_cancellations as jc', 'c.id', '=', 'jc.job_id')
                 ->where('c.deletes', '0')
                 ->where(function ($q) {
                     $q->whereNull('c.job_no')
@@ -1195,178 +1207,157 @@ class CreJobsController extends Controller
 
             $finalJobs = [];
             foreach ($jobs as $rawRow) {
-                $row = (array) $rawRow;
-                $fareBreakdown = [];
-                if (!empty($row['fare_breakdown']) && is_string($row['fare_breakdown'])) {
-                    $fareData = json_decode($row['fare_breakdown'], true);
+                $jobNo = $rawRow->job_no ?? ('GR-' . $rawRow->id);
+
+                $source = "From Website";
+                if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$rawRow->global_type) === 'customer') {
+                    $source = "From Customer App";
+                } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$rawRow->global_type) === 'driver') {
+                    $source = "From Driver App";
+                }
+
+                $from = !empty($rawRow->pick_address) ? $rawRow->pick_address : ($rawRow->from_place ?? '');
+                $to   = !empty($rawRow->drop_address) ? $rawRow->drop_address : ($rawRow->to_place ?? '');
+
+                $dateStr = $rawRow->pickup_date ?? $rawRow->created_at ?? null;
+                $formattedDate = '';
+                $formattedTime = '';
+
+                if ($dateStr) {
+                    try {
+                        $dt = Carbon::parse($dateStr);
+                        $formattedDate = $dt->format('d M Y');
+                        $formattedTime = $dt->format('h:i A');
+                    } catch (\Throwable $e) {
+                        $formattedDate = (string) $dateStr;
+                    }
+                }
+
+                $rawPass = $rawRow->pass_count ?? 1;
+                if (is_string($rawPass) && strtolower(trim($rawPass)) === 'mini') {
+                    $passengers = "Mini";
+                } elseif (is_numeric($rawPass)) {
+                    $count = (int) $rawPass;
+                    $passengers = $count . ($count == 1 ? ' Passenger' : ' Passengers');
+                } else {
+                    $passengers = (string) $rawPass;
+                }
+
+                $totalFare = 0;
+                $commission = 0;
+                $tax = 0;
+                $baseFare = (float)($rawRow->fare ?? 0);
+
+                if (!empty($rawRow->fare_breakdown) && is_string($rawRow->fare_breakdown)) {
+                    $fareData = json_decode($rawRow->fare_breakdown, true);
                     if (json_last_error() === JSON_ERROR_NONE && is_array($fareData)) {
-                        $fareBreakdown = $fareData;
-                        $row = array_merge($row, $fareData);
+                        $totalFare = isset($fareData['total_fare']) ? (float)$fareData['total_fare'] : ((float)($rawRow->fare ?? 0));
+                        $commission = isset($fareData['com']) ? (float)$fareData['com'] : 0;
+                        $tax = isset($fareData['tax']) ? (float)$fareData['tax'] : (isset($fareData['tax_fare']) ? (float)$fareData['tax_fare'] : 0);
+                        if (isset($fareData['base_fare'])) {
+                            $baseFare = (float)$fareData['base_fare'];
+                        }
                     }
                 }
 
-                $baseFare   = (float) (array_key_exists('base_fare', $fareBreakdown) ? $fareBreakdown['base_fare'] : ($row['base_fare'] ?? 0));
-                $tollFare   = (float) (array_key_exists('toll_fare', $fareBreakdown) ? $fareBreakdown['toll_fare'] : ($row['toll_fare'] ?? 0));
-                $tax        = (float) (array_key_exists('tax_fare', $fareBreakdown) ? $fareBreakdown['tax_fare'] : (array_key_exists('tax', $fareBreakdown) ? $fareBreakdown['tax'] : ($row['tax'] ?? 0)));
-                $commission = (float) (array_key_exists('com', $fareBreakdown) ? $fareBreakdown['com'] : ($row['com'] ?? 0));
-                $discount   = (float) (array_key_exists('discount', $fareBreakdown) ? $fareBreakdown['discount'] : ($row['discount'] ?? 0));
-                $isDiscount = array_key_exists('isDiscount', $fareBreakdown) ? $fareBreakdown['isDiscount'] : ($row['isDiscount'] ?? '');
-
-                $jStatus = strtolower($row['job_status'] ?? '');
-                if (in_array($jStatus, ['created', 'bidding', 'schedule'])) {
-                    $totalFare = (float) (array_key_exists('total_fare', $fareBreakdown) ? $fareBreakdown['total_fare'] : ($row['fare'] ?? 0));
-                } else {
-                    $totalFare = (float) ($row['fare'] ?? 0);
+                if ($totalFare <= 0) {
+                    $totalFare = (float)($rawRow->fare ?? 0);
                 }
 
-                $b_amt = 0;
-                $paid_on = (float) ($row['fare'] ?? 0);
-                $paid_wallet = 0;
-                $pay_amt = (float) ($row['pay_amt'] ?? 0);
-                $deductAmt = $row['deductAmt'] ?? null;
-                $gateway = $row['gateway'] ?? '';
-
-                if (array_key_exists('total_fare', $fareBreakdown) && (float)$fareBreakdown['total_fare'] == $pay_amt && $deductAmt == null) {
-                    $b_amt = 0;
-                } elseif ($deductAmt != 0 && array_key_exists('pay_to_driver', $fareBreakdown)) {
-                    $b_amt = (float) $fareBreakdown['pay_to_driver'];
-                } else {
-                    $b_amt = $baseFare + $tollFare;
+                $driverEarned = $totalFare - $commission - $tax;
+                if ($driverEarned < 0) {
+                    $driverEarned = 0;
+                }
+                if ($baseFare <= 0) {
+                    $baseFare = $driverEarned > 0 ? $driverEarned : $totalFare;
                 }
 
-                $credit_bonus = ($isDiscount == 'yes') ? $discount : 0;
-
-                if ($gateway === 'wallet') {
-                    $paid_on = 0;
-                    $paid_wallet = $pay_amt;
-                } elseif (!empty($gateway) && $gateway !== 'wallet') {
-                    $paid_on = $pay_amt;
-                    $paid_wallet = (float) ($row['wallet_amt'] ?? 0);
-                }
-
-                if (($row['payment_status'] ?? 'pending') === 'pending' && $deductAmt == null) {
-                    $paid_on = 0;
-                    $paid_wallet = 0;
-                    $b_amt = 0;
-                }
-
-                if (in_array($jStatus, ['created', 'bidding'])) {
-                    $b_amt = 0;
-                    $paid_on = 0;
-                    $paid_wallet = 0;
-                }
-
-                $row['actual_base']  = $baseFare + $commission;
-                $row['base_fare']    = ($isDiscount == 'yes' && $discount > 0) ? ($baseFare + $commission) - $discount : ($baseFare + $commission);
-                $row['govt_levy']    = $tollFare;
-                $row['tax']          = $tax;
-                $row['com']          = $commission;
-                $row['discount']     = $discount;
-                $row['total_fare']   = $totalFare;
-                $row['fare']         = $totalFare;
-                $row['isDiscount']   = $isDiscount;
-                $row['paid_amt']     = $paid_on;
-                $row['wallet_amt']   = $paid_wallet;
-                $row['credit_bonus'] = $credit_bonus;
-                $row['balance_amt']  = $b_amt;
-
-                $bidsDetails = !empty($row['bids_details']) ? (is_string($row['bids_details']) ? json_decode($row['bids_details'], true) : (array)$row['bids_details']) : [];
-                $row['fare_breakdown'] = $fareBreakdown;
-                $row['add_fare_details'] = !empty($row['add_fare_details']) ? (is_string($row['add_fare_details']) ? json_decode($row['add_fare_details'], true) : $row['add_fare_details']) : null;
-                $row['liked_users'] = !empty($row['liked_users']) ? (is_string($row['liked_users']) ? json_decode($row['liked_users'], true) : $row['liked_users']) : [];
-                $row['feedback_rating'] = $row['fb_rating'] ?? null;
-                $row['feedback_review'] = $row['fb_review'] ?? null;
-                $row['payment_status'] = $row['payment_status'] ?? 'pending';
-                $row['otpVerify'] = $row['otpVerify'] ?? 0;
-
-                $assignedTo = $row['assigned_to'] ?? 0;
-                if (!empty($assignedTo) && $assignedTo > 0) {
-                    if (!isset($bidsDetails[$assignedTo])) {
-                        $bidsDetails[$assignedTo] = [];
-                    }
-                    $bidsDetails[$assignedTo]['status'] = 'accept';
-                    $bidsDetails[$assignedTo]['amount'] = isset($bidsDetails[$assignedTo]['amount']) ? $bidsDetails[$assignedTo]['amount'] : $row['fare'];
-                    $bidsDetails[$assignedTo]['b_name'] = !empty($row['driver_name']) ? $row['driver_name'] : 'Unknown Driver';
-                }
-                $row['bids_details'] = (object)$bidsDetails;
-
-                $uid = $row['user_id'] ?? 0;
-                $poster_name = 'Customer';
+                $uid = $rawRow->user_id ?? 0;
+                $posterName = 'Customer';
                 $mobile = '';
                 $custEmail = '';
 
-                $row['global_type'] = $row['calc_global_type'];
+                $gType = $rawRow->calc_global_type ?? 'website';
 
-                if ($row['global_type'] === 'website') {
-                    if (!empty($row['user_details'])) {
-                        $uDetails = is_string($row['user_details']) ? json_decode($row['user_details'], true) : (array)$row['user_details'];
-                        $row['user_details'] = (object)$uDetails;
-                        $poster_name = $uDetails['name'] ?? 'Website Customer';
+                if ($gType === 'website') {
+                    if (!empty($rawRow->user_details)) {
+                        $uDetails = is_string($rawRow->user_details) ? json_decode($rawRow->user_details, true) : (array)$rawRow->user_details;
+                        $posterName = $uDetails['name'] ?? 'Website Customer';
                         $mobile = $uDetails['mobile'] ?? '';
                         $custEmail = $uDetails['email'] ?? '';
                     } else {
-                        $poster_name = 'Website Customer';
+                        $posterName = 'Website Customer';
                     }
                 } else {
                     if (!empty($uid) && $uid != 0) {
-                        if ($row['global_type'] === 'driver' && isset($driverData[$uid])) {
-                            $poster_name = $driverData[$uid]['name'] ?? 'Driver Customer';
+                        if ($gType === 'driver' && isset($driverData[$uid])) {
+                            $posterName = $driverData[$uid]['name'] ?? 'Driver Customer';
                             $mobile = $driverData[$uid]['mobile'] ?? '';
                             $custEmail = $driverData[$uid]['email'] ?? '';
                         } elseif (isset($customerData[$uid])) {
-                            $poster_name = $customerData[$uid]['name'] ?? 'Customer';
+                            $posterName = $customerData[$uid]['name'] ?? 'Customer';
                             $mobile = $customerData[$uid]['mobile'] ?? '';
                             $custEmail = $customerData[$uid]['email'] ?? '';
                         }
                     }
                 }
 
-                $row['name'] = $poster_name;
-                $row['poster_name'] = $poster_name;
-                if (empty($row['mobile'])) $row['mobile'] = $mobile;
-
-                $row['customer'] = [
-                    'id'     => $uid,
-                    'name'   => $poster_name,
-                    'mobile' => $mobile,
-                    'email'  => $custEmail,
-                ];
-
+                $assignedTo = $rawRow->assigned_to ?? 0;
                 $driverLoc = isset($driverLocations[$assignedTo]) ? $driverLocations[$assignedTo] : null;
-                $row['driver'] = [
-                    'id'                  => $assignedTo,
-                    'name'                => $row['driver_name'] ?? ($driverData[$assignedTo]['name'] ?? 'Unassigned'),
-                    'mobile'              => $row['driver_mobile'] ?? ($driverData[$assignedTo]['mobile'] ?? ''),
-                    'rating'              => $row['fb_rating'] ?? null,
-                    'lat'                 => $driverLoc['lat'] ?? null,
-                    'lng'                 => $driverLoc['lng'] ?? null,
-                    'current_state'       => $driverLoc['current_state'] ?? '',
-                    'current_district'    => $driverLoc['current_district'] ?? '',
-                    'current_address'     => $driverLoc['current_address'] ?? '',
-                    'location_updated_at' => $driverLoc['updated_at'] ?? null,
-                ];
 
-                $row['cancelled_at'] = !empty($row['cancelled_at']) ? $row['cancelled_at'] : ($row['c_cancelled_at'] ?? null);
-
-                unset(
-                    $row['fb_rating'],
-                    $row['fb_review'],
-                    $row['calc_global_type'],
-                    $row['c_cancelled_at']
-                );
-
-                $row['count'] = 0;
-                if (!empty($row['id']) && isset($pushData[$row['id']])) {
-                    $row['count'] = $pushData[$row['id']];
+                $jobStatus = strtolower($rawRow->job_status ?? '');
+                $statusLabel = 'Assigned';
+                if ($jobStatus === 'started') {
+                    $statusLabel = 'Started';
+                } elseif ($jobStatus === 'completed') {
+                    $statusLabel = 'Completed';
+                } elseif ($jobStatus === 'cancelled') {
+                    $statusLabel = 'Cancelled';
+                } elseif (in_array($jobStatus, ['accept', 'accepted']) && !empty($rawRow->pickup_date) && Carbon::parse($rawRow->pickup_date)->isPast()) {
+                    $statusLabel = 'Incomplete';
                 }
 
-                $finalJobs[] = $row;
+                $finalJobs[] = [
+                    'job_id'             => $rawRow->id,
+                    'job_no'             => $jobNo,
+                    'job_status'         => $rawRow->job_status ?? 'assigned',
+                    'status_label'       => $statusLabel,
+                    'source'             => $source,
+                    'from'               => $from,
+                    'to'                 => $to,
+                    'date'               => $formattedDate,
+                    'time'               => $formattedTime,
+                    'passengers'         => $passengers,
+                    'amount'             => round($baseFare, 2),
+                    'customer_paid'      => round($totalFare, 2),
+                    'driver_amount'      => round($driverEarned, 2),
+                    'commission'         => round($commission, 2),
+                    'tax'                => round($tax, 2),
+                    'notification_count' => isset($pushData[$rawRow->id]) ? $pushData[$rawRow->id] : 0,
+                    'driver'             => [
+                        'id'                  => $assignedTo,
+                        'name'                => $rawRow->driver_name ?? ($driverData[$assignedTo]['name'] ?? 'Unassigned'),
+                        'mobile'              => $rawRow->driver_mobile ?? ($driverData[$assignedTo]['mobile'] ?? ''),
+                        'rating'              => $rawRow->fb_rating ?? null,
+                        'lat'                 => $driverLoc['lat'] ?? null,
+                        'lng'                 => $driverLoc['lng'] ?? null,
+                        'current_state'       => $driverLoc['current_state'] ?? '',
+                        'current_district'    => $driverLoc['current_district'] ?? '',
+                        'current_address'     => $driverLoc['current_address'] ?? '',
+                        'location_updated_at' => $driverLoc['updated_at'] ?? null,
+                    ],
+                    'customer'           => [
+                        'id'     => $uid,
+                        'name'   => $posterName,
+                        'mobile' => $mobile,
+                        'email'  => $custEmail,
+                    ],
+                ];
             }
 
             return response()->json([
                 'status' => true,
-                'type'   => 1,
-                'result' => array_values($finalJobs)
+                'data'   => array_values($finalJobs)
             ], 200);
 
         } catch (\Throwable $e) {
