@@ -11,6 +11,7 @@ Route::post('/login', [LoginController::class, 'Login']);
 Route::middleware(['cre.auth'])->group(function () {
     Route::post('/logout', [LoginController::class, 'logout']);
     Route::get('/job-list', [CreJobsController::class, 'getJobList']);
+    Route::match(['get', 'post'], '/assigned-job-list', [CreJobsController::class, 'getAssignedJobList']);
     Route::get('/job-details', [CreJobsController::class, 'getJobDetails']);
     Route::post('/job-details', [CreJobsController::class, 'getJobDetails']);
     Route::post('/cancel-job', [CreJobsController::class, 'cancelJob']);

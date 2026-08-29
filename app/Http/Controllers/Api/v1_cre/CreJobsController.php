@@ -1016,4 +1016,373 @@ class CreJobsController extends Controller
             ], 500);
         }
     }
+
+    public function getAssignedJobList(Request $request)
+    {
+        try {
+            $status = trim((string) ($request->input('jobStatus') ?? $request->input('status') ?? 'all'));
+            $startDate = trim((string) $request->input('startDate'));
+            $endDate = trim((string) $request->input('endDate'));
+            $filterType = trim((string) $request->input('filterType'));
+
+            $currentDateTime = now()->toDateTimeString();
+            $dateCol = ($filterType === 'pickup') ? 'c.pickup_date' : 'c.created_at';
+
+            $query = DB::table('cus_job_temp as c')
+                ->select([
+                    'c.*',
+                    'd.name as driver_name',
+                    'd.mobile as driver_mobile',
+                    'd.cab_model as driver_cab_model',
+                    'd.cab_number as driver_cab_number',
+                    'cf.rating as fb_rating',
+                    'cf.review as fb_review',
+                    'jc.created_at as c_cancelled_at'
+                ])
+                ->leftJoin('user_register as d', 'c.assigned_to', '=', 'd.id')
+                ->leftJoin('customer_feedback as cf', 'c.id', '=', 'cf.job_id')
+                ->leftJoin('job_cancellations as jc', 'c.id', '=', 'jc.job_id')
+                ->where('c.deletes', '0')
+                ->where(function ($q) {
+                    $q->whereNull('c.job_no')
+                      ->orWhere('c.job_no', 'NOT LIKE', 'GRP-%');
+                });
+
+            $statusLower = strtolower($status);
+            if ($statusLower === 'completed') {
+                $query->where('c.job_status', 'completed');
+            } elseif ($statusLower === 'started') {
+                $query->where('c.job_status', 'started');
+            } elseif ($statusLower === 'incompleted') {
+                $query->whereIn('c.job_status', ['accept', 'accepted'])
+                      ->where('c.pickup_date', '<', $currentDateTime);
+            } elseif ($statusLower === 'accepted' || $statusLower === 'upcoming') {
+                $query->whereIn('c.job_status', ['accept', 'accepted'])
+                      ->where('c.pickup_date', '>=', $currentDateTime);
+            } elseif ($statusLower === 'today') {
+                $todayStart = now()->startOfDay()->toDateTimeString();
+                $todayEnd   = now()->endOfDay()->toDateTimeString();
+                $query->whereBetween('c.pickup_date', [$todayStart, $todayEnd]);
+            } elseif ($statusLower === 'cancelled') {
+                $query->where('c.job_status', 'cancelled');
+            } elseif ($statusLower === 'not_complete') {
+                $query->whereNotIn('c.job_status', ['accept', 'accepted', 'started', 'completed', 'cancelled']);
+            } else {
+                $query->where(function ($q) {
+                    $q->whereIn('c.job_status', ['accept', 'accepted', 'started', 'completed', 'cancelled', 'incompleted'])
+                      ->orWhere(function ($q2) {
+                          $q2->whereNotNull('c.assigned_to')->where('c.assigned_to', '>', 0);
+                      });
+                });
+            }
+
+            if (!empty($startDate) && !empty($endDate)) {
+                $start = Carbon::parse($startDate)->startOfDay()->toDateTimeString();
+                $end   = Carbon::parse($endDate)->endOfDay()->toDateTimeString();
+                $query->whereBetween($dateCol, [$start, $end]);
+            }
+
+            $jobs = $query->orderBy('c.pickup_date', 'desc')->get();
+
+            $customerIds = [];
+            $driverIds = [];
+            $pushJobIds = [];
+
+            foreach ($jobs as $row) {
+                $uid = $row->user_id ?? 0;
+                $gType = 'website';
+                $jobNo = $row->job_no ?? '';
+
+                if (isset($row->global_type) && $row->global_type === 'schedule') {
+                    $gType = 'schedule';
+                } elseif (empty($uid) || $uid == 0 || !empty($row->user_details)) {
+                    $gType = 'website';
+                } elseif (strpos($jobNo, 'GRC') === 0) {
+                    $gType = 'customer';
+                } elseif (strpos($jobNo, 'GRD') === 0) {
+                    $gType = 'driver';
+                }
+
+                $row->calc_global_type = $gType;
+
+                if (!empty($uid) && $uid != 0 && $gType !== 'website') {
+                    if ($gType === 'driver') {
+                        $driverIds[$uid] = $uid;
+                    } else {
+                        $customerIds[$uid] = $uid;
+                    }
+                }
+
+                if (!empty($row->assigned_to)) {
+                    $driverIds[$row->assigned_to] = $row->assigned_to;
+                }
+
+                $currentStatus = strtolower($row->job_status ?? '');
+                if (in_array($currentStatus, ['accept', 'accepted', 'started', 'completed']) && !empty($row->id)) {
+                    $pushJobIds[$row->id] = $row->id;
+                }
+            }
+
+            $customerData = [];
+            if (!empty($customerIds)) {
+                $custs = DB::table('customer_register')
+                    ->whereIn('id', array_keys($customerIds))
+                    ->select(['id', 'name', 'mobile', 'email'])
+                    ->get();
+                foreach ($custs as $c) {
+                    $customerData[$c->id] = (array)$c;
+                }
+            }
+
+            $driverData = [];
+            if (!empty($driverIds)) {
+                $drvs = DB::table('user_register')
+                    ->whereIn('id', array_keys($driverIds))
+                    ->select(['id', 'name', 'mobile', 'email', 'cab_model', 'cab_number'])
+                    ->get();
+                foreach ($drvs as $d) {
+                    $driverData[$d->id] = (array)$d;
+                }
+            }
+
+            $driverLocations = [];
+            if (!empty($driverIds)) {
+                $locs = DB::table('drivers_current_location')
+                    ->whereIn('user_id', array_keys($driverIds))
+                    ->orderBy('updated_at', 'desc')
+                    ->get();
+                foreach ($locs as $loc) {
+                    if (!isset($driverLocations[$loc->user_id])) {
+                        $driverLocations[$loc->user_id] = [
+                            'lat'              => $loc->lat ?? null,
+                            'lng'              => $loc->lng ?? null,
+                            'current_state'    => $loc->current_state ?? '',
+                            'current_district' => $loc->current_district ?? '',
+                            'current_address'  => $loc->current_address ?? '',
+                            'updated_at'       => $loc->updated_at ?? null,
+                        ];
+                    }
+                }
+            }
+
+            $pushData = [];
+            if (!empty($pushJobIds)) {
+                $chunks = array_chunk(array_values($pushJobIds), 50);
+                foreach ($chunks as $chunk) {
+                    $pushLogs = DB::table('push_notifications')
+                        ->where(function($q) use ($chunk) {
+                            foreach ($chunk as $jid) {
+                                $q->orWhere('req_json', 'LIKE', '%"job_id": ' . $jid . '%')
+                                  ->orWhere('req_json', 'LIKE', '%"job_id":' . $jid . '%');
+                            }
+                        })
+                        ->select(['req_json', 'res_json'])
+                        ->orderBy('id', 'asc')
+                        ->get();
+
+                    foreach ($pushLogs as $pLog) {
+                        if (!empty($pLog->res_json)) {
+                            $resArr = json_decode($pLog->res_json, true);
+                            if (isset($resArr['success_count'])) {
+                                foreach ($chunk as $jid) {
+                                    if (strpos($pLog->req_json, '"job_id": ' . $jid) !== false || strpos($pLog->req_json, '"job_id":' . $jid) !== false) {
+                                        $pushData[$jid] = (int)$resArr['success_count'];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            $finalJobs = [];
+            foreach ($jobs as $rawRow) {
+                $row = (array) $rawRow;
+                $fareBreakdown = [];
+                if (!empty($row['fare_breakdown']) && is_string($row['fare_breakdown'])) {
+                    $fareData = json_decode($row['fare_breakdown'], true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($fareData)) {
+                        $fareBreakdown = $fareData;
+                        $row = array_merge($row, $fareData);
+                    }
+                }
+
+                $baseFare   = (float) (array_key_exists('base_fare', $fareBreakdown) ? $fareBreakdown['base_fare'] : ($row['base_fare'] ?? 0));
+                $tollFare   = (float) (array_key_exists('toll_fare', $fareBreakdown) ? $fareBreakdown['toll_fare'] : ($row['toll_fare'] ?? 0));
+                $tax        = (float) (array_key_exists('tax_fare', $fareBreakdown) ? $fareBreakdown['tax_fare'] : (array_key_exists('tax', $fareBreakdown) ? $fareBreakdown['tax'] : ($row['tax'] ?? 0)));
+                $commission = (float) (array_key_exists('com', $fareBreakdown) ? $fareBreakdown['com'] : ($row['com'] ?? 0));
+                $discount   = (float) (array_key_exists('discount', $fareBreakdown) ? $fareBreakdown['discount'] : ($row['discount'] ?? 0));
+                $isDiscount = array_key_exists('isDiscount', $fareBreakdown) ? $fareBreakdown['isDiscount'] : ($row['isDiscount'] ?? '');
+
+                $jStatus = strtolower($row['job_status'] ?? '');
+                if (in_array($jStatus, ['created', 'bidding', 'schedule'])) {
+                    $totalFare = (float) (array_key_exists('total_fare', $fareBreakdown) ? $fareBreakdown['total_fare'] : ($row['fare'] ?? 0));
+                } else {
+                    $totalFare = (float) ($row['fare'] ?? 0);
+                }
+
+                $b_amt = 0;
+                $paid_on = (float) ($row['fare'] ?? 0);
+                $paid_wallet = 0;
+                $pay_amt = (float) ($row['pay_amt'] ?? 0);
+                $deductAmt = $row['deductAmt'] ?? null;
+                $gateway = $row['gateway'] ?? '';
+
+                if (array_key_exists('total_fare', $fareBreakdown) && (float)$fareBreakdown['total_fare'] == $pay_amt && $deductAmt == null) {
+                    $b_amt = 0;
+                } elseif ($deductAmt != 0 && array_key_exists('pay_to_driver', $fareBreakdown)) {
+                    $b_amt = (float) $fareBreakdown['pay_to_driver'];
+                } else {
+                    $b_amt = $baseFare + $tollFare;
+                }
+
+                $credit_bonus = ($isDiscount == 'yes') ? $discount : 0;
+
+                if ($gateway === 'wallet') {
+                    $paid_on = 0;
+                    $paid_wallet = $pay_amt;
+                } elseif (!empty($gateway) && $gateway !== 'wallet') {
+                    $paid_on = $pay_amt;
+                    $paid_wallet = (float) ($row['wallet_amt'] ?? 0);
+                }
+
+                if (($row['payment_status'] ?? 'pending') === 'pending' && $deductAmt == null) {
+                    $paid_on = 0;
+                    $paid_wallet = 0;
+                    $b_amt = 0;
+                }
+
+                if (in_array($jStatus, ['created', 'bidding'])) {
+                    $b_amt = 0;
+                    $paid_on = 0;
+                    $paid_wallet = 0;
+                }
+
+                $row['actual_base']  = $baseFare + $commission;
+                $row['base_fare']    = ($isDiscount == 'yes' && $discount > 0) ? ($baseFare + $commission) - $discount : ($baseFare + $commission);
+                $row['govt_levy']    = $tollFare;
+                $row['tax']          = $tax;
+                $row['com']          = $commission;
+                $row['discount']     = $discount;
+                $row['total_fare']   = $totalFare;
+                $row['fare']         = $totalFare;
+                $row['isDiscount']   = $isDiscount;
+                $row['paid_amt']     = $paid_on;
+                $row['wallet_amt']   = $paid_wallet;
+                $row['credit_bonus'] = $credit_bonus;
+                $row['balance_amt']  = $b_amt;
+
+                $bidsDetails = !empty($row['bids_details']) ? (is_string($row['bids_details']) ? json_decode($row['bids_details'], true) : (array)$row['bids_details']) : [];
+                $row['fare_breakdown'] = $fareBreakdown;
+                $row['add_fare_details'] = !empty($row['add_fare_details']) ? (is_string($row['add_fare_details']) ? json_decode($row['add_fare_details'], true) : $row['add_fare_details']) : null;
+                $row['liked_users'] = !empty($row['liked_users']) ? (is_string($row['liked_users']) ? json_decode($row['liked_users'], true) : $row['liked_users']) : [];
+                $row['feedback_rating'] = $row['fb_rating'] ?? null;
+                $row['feedback_review'] = $row['fb_review'] ?? null;
+                $row['payment_status'] = $row['payment_status'] ?? 'pending';
+                $row['otpVerify'] = $row['otpVerify'] ?? 0;
+
+                $assignedTo = $row['assigned_to'] ?? 0;
+                if (!empty($assignedTo) && $assignedTo > 0) {
+                    if (!isset($bidsDetails[$assignedTo])) {
+                        $bidsDetails[$assignedTo] = [];
+                    }
+                    $bidsDetails[$assignedTo]['status'] = 'accept';
+                    $bidsDetails[$assignedTo]['amount'] = isset($bidsDetails[$assignedTo]['amount']) ? $bidsDetails[$assignedTo]['amount'] : $row['fare'];
+                    $bidsDetails[$assignedTo]['b_name'] = !empty($row['driver_name']) ? $row['driver_name'] : 'Unknown Driver';
+                }
+                $row['bids_details'] = (object)$bidsDetails;
+
+                $uid = $row['user_id'] ?? 0;
+                $poster_name = 'Customer';
+                $mobile = '';
+                $custEmail = '';
+
+                $row['global_type'] = $row['calc_global_type'];
+
+                if ($row['global_type'] === 'website') {
+                    if (!empty($row['user_details'])) {
+                        $uDetails = is_string($row['user_details']) ? json_decode($row['user_details'], true) : (array)$row['user_details'];
+                        $row['user_details'] = (object)$uDetails;
+                        $poster_name = $uDetails['name'] ?? 'Website Customer';
+                        $mobile = $uDetails['mobile'] ?? '';
+                        $custEmail = $uDetails['email'] ?? '';
+                    } else {
+                        $poster_name = 'Website Customer';
+                    }
+                } else {
+                    if (!empty($uid) && $uid != 0) {
+                        if ($row['global_type'] === 'driver' && isset($driverData[$uid])) {
+                            $poster_name = $driverData[$uid]['name'] ?? 'Driver Customer';
+                            $mobile = $driverData[$uid]['mobile'] ?? '';
+                            $custEmail = $driverData[$uid]['email'] ?? '';
+                        } elseif (isset($customerData[$uid])) {
+                            $poster_name = $customerData[$uid]['name'] ?? 'Customer';
+                            $mobile = $customerData[$uid]['mobile'] ?? '';
+                            $custEmail = $customerData[$uid]['email'] ?? '';
+                        }
+                    }
+                }
+
+                $row['name'] = $poster_name;
+                $row['poster_name'] = $poster_name;
+                if (empty($row['mobile'])) $row['mobile'] = $mobile;
+
+                $row['customer'] = [
+                    'id'     => $uid,
+                    'name'   => $poster_name,
+                    'mobile' => $mobile,
+                    'email'  => $custEmail,
+                ];
+
+                $driverLoc = isset($driverLocations[$assignedTo]) ? $driverLocations[$assignedTo] : null;
+                $row['driver'] = [
+                    'id'                  => $assignedTo,
+                    'name'                => $row['driver_name'] ?? ($driverData[$assignedTo]['name'] ?? 'Unassigned'),
+                    'mobile'              => $row['driver_mobile'] ?? ($driverData[$assignedTo]['mobile'] ?? ''),
+                    'rating'              => $row['fb_rating'] ?? null,
+                    'cab_model'           => $row['driver_cab_model'] ?? ($driverData[$assignedTo]['cab_model'] ?? ''),
+                    'cab_number'          => $row['driver_cab_number'] ?? ($driverData[$assignedTo]['cab_number'] ?? ''),
+                    'lat'                 => $driverLoc['lat'] ?? null,
+                    'lng'                 => $driverLoc['lng'] ?? null,
+                    'current_state'       => $driverLoc['current_state'] ?? '',
+                    'current_district'    => $driverLoc['current_district'] ?? '',
+                    'current_address'     => $driverLoc['current_address'] ?? '',
+                    'location_updated_at' => $driverLoc['updated_at'] ?? null,
+                ];
+
+                $row['cancelled_at'] = !empty($row['cancelled_at']) ? $row['cancelled_at'] : ($row['c_cancelled_at'] ?? null);
+
+                unset(
+                    $row['fb_rating'],
+                    $row['fb_review'],
+                    $row['calc_global_type'],
+                    $row['c_cancelled_at']
+                );
+
+                $row['count'] = 0;
+                if (!empty($row['id']) && isset($pushData[$row['id']])) {
+                    $row['count'] = $pushData[$row['id']];
+                }
+
+                $finalJobs[] = $row;
+            }
+
+            return response()->json([
+                'status' => true,
+                'type'   => 1,
+                'result' => array_values($finalJobs)
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('CRE getAssignedJobList Exception: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to fetch assigned jobs: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
