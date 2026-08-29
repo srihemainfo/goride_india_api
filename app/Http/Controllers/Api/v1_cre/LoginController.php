@@ -74,7 +74,7 @@ class LoginController extends Controller
             if ($user->status == 1) {
                 return response()->json([
                     'status'  => false,
-                    'message' => 'Your Account is In Active'
+                    'message' => 'Your Account is InActive'
                 ], 403);
             }
 
