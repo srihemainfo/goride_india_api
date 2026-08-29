@@ -1033,8 +1033,6 @@ class CreJobsController extends Controller
                     'c.*',
                     'd.name as driver_name',
                     'd.mobile as driver_mobile',
-                    'd.cab_model as driver_cab_model',
-                    'd.cab_number as driver_cab_number',
                     'cf.rating as fb_rating',
                     'cf.review as fb_review',
                     'jc.created_at as c_cancelled_at'
@@ -1138,7 +1136,7 @@ class CreJobsController extends Controller
             if (!empty($driverIds)) {
                 $drvs = DB::table('user_register')
                     ->whereIn('id', array_keys($driverIds))
-                    ->select(['id', 'name', 'mobile', 'email', 'cab_model', 'cab_number'])
+                    ->select(['id', 'name', 'mobile', 'email'])
                     ->get();
                 foreach ($drvs as $d) {
                     $driverData[$d->id] = (array)$d;
@@ -1340,8 +1338,6 @@ class CreJobsController extends Controller
                     'name'                => $row['driver_name'] ?? ($driverData[$assignedTo]['name'] ?? 'Unassigned'),
                     'mobile'              => $row['driver_mobile'] ?? ($driverData[$assignedTo]['mobile'] ?? ''),
                     'rating'              => $row['fb_rating'] ?? null,
-                    'cab_model'           => $row['driver_cab_model'] ?? ($driverData[$assignedTo]['cab_model'] ?? ''),
-                    'cab_number'          => $row['driver_cab_number'] ?? ($driverData[$assignedTo]['cab_number'] ?? ''),
                     'lat'                 => $driverLoc['lat'] ?? null,
                     'lng'                 => $driverLoc['lng'] ?? null,
                     'current_state'       => $driverLoc['current_state'] ?? '',
