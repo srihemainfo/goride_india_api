@@ -604,25 +604,6 @@ class CreJobsController extends Controller
                 ], 400);
             }
 
-            $get_bidders_ids = [];
-
-            if (!empty($this->serviceAccount) && !empty($get_job->job_no)) {
-                try {
-                    $firebase = new \App\Services\FirebaseJobService(
-                        $this->serviceAccount['project_id'],
-                        $this->getAccessToken()
-                    );
-
-                    $jobDoc = $firebase->getJob($get_job->job_no);
-                    $jobData = $jobDoc ? $this->parseFirestoreFields($jobDoc) : [];
-                    $get_bidders_ids = array_keys($jobData['bids_details'] ?? []);
-
-                    $firebase->deleteJob($get_job->job_no);
-                } catch (\Throwable $fe) {
-                    Log::error('CRE Cancel Job Firebase Error: ' . $fe->getMessage());
-                }
-            }
-
             DB::table('cus_job_temp')
                 ->where('id', $get_job->id)
                 ->update([
@@ -646,63 +627,79 @@ class CreJobsController extends Controller
                 'created_at'   => Carbon::now()
             ]);
 
-            $url = "https://graph.facebook.com/" . env('FB_WHATSAPP_VERSION', 'v24.0') . "/" . env('FB_WHATSAPP_PHONE_NUMBER_ID') . "/messages";
-            $templateName = 'admin_cancle_jobs';
-            $template = DB::table('wamail_templates')->where('name', $templateName)->first();
-
-            if ($get_job->user_id == 0) {
-                $userDetails = json_decode($get_job->user_details ?? '', true);
-                $customerName = $userDetails['name'] ?? 'Customer';
-                $customerPhone = $userDetails['mobile'] ?? '';
-
-                if (!empty($customerPhone)) {
-                    $cleanPhone = preg_replace('/[^0-9]/', '', $customerPhone);
-                    if (strlen($cleanPhone) === 10) {
-                        $cleanPhone = '91' . $cleanPhone;
-                    }
-
-                    if (Controller::checkWhatsApp(['mobile' => $cleanPhone])) {
-                        $pickupLoc = $get_job->pick_address ?? $get_job->from_place ?? 'Unknown Location';
-                        $dropLoc = $get_job->drop_address ?? $get_job->to_place ?? 'Unknown Location';
-                        $rawDate = $get_job->pickup_date ?? $get_job->day ?? $get_job->created_at ?? null;
-                        $formattedDate = !empty($rawDate) ? Carbon::parse($rawDate)->format('d-m-Y h:i A') : 'Not Specified';
-
-                        $parameters = [$customerName, $get_job->job_no, $pickupLoc, $dropLoc, $formattedDate];
-                        $this->sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, $request);
-                    }
-                }
-            } else {
-                $get_u = DB::table('customer_register')->where('id', $get_job->user_id)->where('deletes', 0)->first();
-                if (!$get_u) {
-                    $get_u = DB::table('user_register')->where('id', $get_job->user_id)->where('deletes', '0')->first();
-                }
-
-                if ($get_u) {
-                    $cleanPhone = preg_replace('/[^0-9]/', '', $get_u->mobile);
-                    if (strlen($cleanPhone) === 10) {
-                        $cleanPhone = '91' . $cleanPhone;
-                    }
-
-                    if (Controller::checkWhatsApp(['mobile' => $get_u->mobile])) {
-                        $formattedDate = Carbon::parse($get_job->pickup_date)->format('d-m-Y h:i A');
-                        $pickupLoc = $get_job->pick_address ?? $get_job->from_place ?? 'Unknown Location';
-                        $dropLoc = $get_job->drop_address ?? $get_job->to_place ?? 'Unknown Location';
-                        $parameters = [$get_u->name, $get_job->job_no, $pickupLoc, $dropLoc, $formattedDate];
-
-                        $this->sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, $request);
-                    }
-                }
-            }
-
             $jobDataArr = (array) $get_job;
-            $biddersIds = $get_bidders_ids;
             $controller = $this;
 
-            dispatch(function () use ($jobDataArr, $biddersIds, $controller) {
-                if (count($biddersIds) > 0) {
+            dispatch(function () use ($jobDataArr, $controller) {
+                $get_job_obj = (object) $jobDataArr;
+                $get_bidders_ids = [];
+
+                if (!empty($controller->serviceAccount) && !empty($get_job_obj->job_no)) {
+                    try {
+                        $firebase = new \App\Services\FirebaseJobService(
+                            $controller->serviceAccount['project_id'],
+                            $controller->getAccessToken()
+                        );
+
+                        $jobDoc = $firebase->getJob($get_job_obj->job_no);
+                        $jobData = $jobDoc ? $controller->parseFirestoreFields($jobDoc) : [];
+                        $get_bidders_ids = array_keys($jobData['bids_details'] ?? []);
+
+                        $firebase->deleteJob($get_job_obj->job_no);
+                    } catch (\Throwable $fe) {
+                        Log::error('CRE Cancel Job Firebase Error: ' . $fe->getMessage());
+                    }
+                }
+
+                $url = "https://graph.facebook.com/" . env('FB_WHATSAPP_VERSION', 'v24.0') . "/" . env('FB_WHATSAPP_PHONE_NUMBER_ID') . "/messages";
+                $templateName = 'admin_cancle_jobs';
+                $template = DB::table('wamail_templates')->where('name', $templateName)->first();
+
+                $customerName = 'Customer';
+                $customerMobile = '';
+
+                if ($get_job_obj->user_id == 0) {
+                    $userDetails = json_decode($get_job_obj->user_details ?? '', true);
+                    $customerName = $userDetails['name'] ?? 'Customer';
+                    $customerMobile = $userDetails['mobile'] ?? '';
+                } else {
+                    $get_u = DB::table('customer_register')->where('id', $get_job_obj->user_id)->where('deletes', 0)->first();
+                    if (!$get_u) {
+                        $get_u = DB::table('user_register')->where('id', $get_job_obj->user_id)->where('deletes', '0')->first();
+                    }
+
+                    if ($get_u) {
+                        $customerName = $get_u->name ?? 'Customer';
+                        $customerMobile = $get_u->mobile ?? '';
+                    }
+                }
+
+                if (!empty($customerMobile)) {
+                    $cleanPhone = preg_replace('/[^0-9]/', '', (string)$customerMobile);
+                    if (strlen($cleanPhone) === 10) {
+                        $cleanPhone = '91' . $cleanPhone;
+                    }
+
+                    if (!empty($cleanPhone)) {
+                        $jobNo = $get_job_obj->job_no ?? ('GR-' . $get_job_obj->id);
+                        $pickupLoc = $get_job_obj->pick_address ?? $get_job_obj->from_place ?? 'Unknown Location';
+                        $dropLoc = $get_job_obj->drop_address ?? $get_job_obj->to_place ?? 'Unknown Location';
+                        $rawDate = $get_job_obj->pickup_date ?? $get_job_obj->day ?? $get_job_obj->created_at ?? null;
+                        $formattedDate = !empty($rawDate) ? Carbon::parse($rawDate)->format('d-m-Y h:i A') : 'Not Specified';
+
+                        $parameters = [$customerName, $jobNo, $pickupLoc, $dropLoc, $formattedDate];
+
+                        try {
+                            $controller->sendCancelWhatsAppMessage($cleanPhone, $templateName, $template, $parameters, $url, null);
+                        } catch (\Throwable $we) {
+                            Log::error('CRE WhatsApp Customer Exception: ' . $we->getMessage());
+                        }
+                    }
+                }
+
+                if (count($get_bidders_ids) > 0) {
                     $accessToken = $controller->getAccessToken();
-                    $get_job_obj = (object) $jobDataArr;
-                    $fcmTokens   = $controller->getFcm($biddersIds);
+                    $fcmTokens   = $controller->getFcm($get_bidders_ids);
 
                     if ($fcmTokens && count($fcmTokens) && $accessToken) {
                         foreach ($fcmTokens as $token) {
