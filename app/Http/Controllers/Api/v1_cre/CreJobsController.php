@@ -377,7 +377,7 @@ class CreJobsController extends Controller
                     $source = "From Driver App";
                 }
 
-                $badge = "Regular";
+                $badge = "New";
                 if (strtolower((string)$job->global_type) === 'schedule' || strtolower((string)$job->job_status) === 'schedule') {
                     $badge = "Schedule";
                 }
@@ -460,7 +460,7 @@ class CreJobsController extends Controller
                 $source = "From Driver App";
             }
 
-            $badge = "Regular";
+            $badge = "New";
             if (strtolower((string)$job->global_type) === 'schedule' || strtolower((string)$job->job_status) === 'schedule') {
                 $badge = "Schedule";
             }
@@ -1020,18 +1020,18 @@ class CreJobsController extends Controller
     public function getAssignedJobList(Request $request)
     {
         try {
-            $status = trim((string) ($request->input('jobStatus') ?? $request->input('status') ?? 'all'));
-            $startDate = trim((string) $request->input('startDate'));
-            $endDate = trim((string) $request->input('endDate'));
-            $filterType = trim((string) $request->input('filterType'));
+            $startDate  = trim((string) ($request->input('startDate') ?? $request->input('start_date') ?? ''));
+            $endDate    = trim((string) ($request->input('endDate') ?? $request->input('end_date') ?? ''));
+            $filterType = trim((string) ($request->input('filterType') ?? $request->input('filter_type') ?? 'pickup'));
 
             $currentDateTime = now()->toDateTimeString();
-            $dateCol = ($filterType === 'pickup') ? 'c.pickup_date' : 'c.created_at';
+            $dateCol = ($filterType === 'created') ? 'c.created_at' : 'c.pickup_date';
 
             $query = DB::table('cus_job_temp as c')
                 ->select([
                     'c.id',
                     'c.job_no',
+                    'c.job_type',
                     'c.job_status',
                     'c.global_type',
                     'c.user_id',
@@ -1048,59 +1048,52 @@ class CreJobsController extends Controller
                     'c.user_details',
                     'c.preview_hash',
                     'd.name as driver_name',
-                    'd.mobile as driver_mobile',
-                    'cf.rating as fb_rating'
+                    'd.mobile as driver_mobile'
                 ])
                 ->leftJoin('user_register as d', 'c.assigned_to', '=', 'd.id')
-                ->leftJoin('customer_feedback as cf', 'c.id', '=', 'cf.job_id')
                 ->where('c.deletes', '0')
                 ->where(function ($q) {
                     $q->whereNull('c.job_no')
                       ->orWhere('c.job_no', 'NOT LIKE', 'GRP-%');
                 });
 
-            $statusLower = strtolower($status);
-            if ($statusLower === 'completed') {
-                $query->where('c.job_status', 'completed');
-            } elseif ($statusLower === 'started') {
-                $query->where('c.job_status', 'started');
-            } elseif ($statusLower === 'incompleted') {
-                $query->whereIn('c.job_status', ['accept', 'accepted'])
-                      ->where('c.pickup_date', '<', $currentDateTime);
-            } elseif ($statusLower === 'accepted' || $statusLower === 'upcoming') {
-                $query->whereIn('c.job_status', ['accept', 'accepted'])
-                      ->where('c.pickup_date', '>=', $currentDateTime);
-            } elseif ($statusLower === 'today') {
-                $todayStart = now()->startOfDay()->toDateTimeString();
-                $todayEnd   = now()->endOfDay()->toDateTimeString();
-                $query->whereBetween('c.pickup_date', [$todayStart, $todayEnd]);
-            } elseif ($statusLower === 'cancelled') {
-                $query->where('c.job_status', 'cancelled');
-            } elseif ($statusLower === 'not_complete') {
-                $query->whereNotIn('c.job_status', ['accept', 'accepted', 'started', 'completed', 'cancelled']);
-            } else {
-                $query->where(function ($q) {
-                    $q->whereIn('c.job_status', ['accept', 'accepted', 'started', 'completed', 'cancelled', 'incompleted'])
-                      ->orWhere(function ($q2) {
-                          $q2->whereNotNull('c.assigned_to')->where('c.assigned_to', '>', 0);
-                      });
-                });
-            }
+            // Filter ONLY assigned status jobs (omit started, cancelled, dropped, completed, etc.)
+            $query->where(function ($q) {
+                $q->whereIn('c.job_status', ['accept', 'accepted', 'assigned'])
+                  ->orWhere(function ($q2) {
+                      $q2->whereNotNull('c.assigned_to')
+                         ->where('c.assigned_to', '>', 0)
+                         ->whereNotIn('c.job_status', ['started', 'cancelled', 'dropped', 'completed']);
+                  });
+            });
 
+            // Apply Date Filter or Default (assigned pickup date must not exceed current time)
             if (!empty($startDate) && !empty($endDate)) {
                 $start = Carbon::parse($startDate)->startOfDay()->toDateTimeString();
                 $end   = Carbon::parse($endDate)->endOfDay()->toDateTimeString();
                 $query->whereBetween($dateCol, [$start, $end]);
+            } else {
+                // Default: Assigned status jobs where pickup date does not exceed current time
+                $query->where('c.pickup_date', '<=', $currentDateTime);
             }
 
             $jobs = $query->orderBy('c.pickup_date', 'desc')->get();
 
+            if ($jobs->isEmpty()) {
+                return response()->json([
+                    'status' => true,
+                    'data'   => []
+                ], 200);
+            }
+
+            $jobIds      = [];
             $customerIds = [];
-            $driverIds = [];
-            $pushJobIds = [];
+            $driverIds   = [];
+            $pushJobIds  = [];
 
             foreach ($jobs as $row) {
-                $uid = $row->user_id ?? 0;
+                $jobIds[] = $row->id;
+                $uid   = $row->user_id ?? 0;
                 $gType = 'website';
                 $jobNo = $row->job_no ?? '';
 
@@ -1128,12 +1121,22 @@ class CreJobsController extends Controller
                     $driverIds[$row->assigned_to] = $row->assigned_to;
                 }
 
-                $currentStatus = strtolower($row->job_status ?? '');
-                if (in_array($currentStatus, ['accept', 'accepted', 'started', 'completed']) && !empty($row->id)) {
-                    $pushJobIds[$row->id] = $row->id;
+                $pushJobIds[$row->id] = $row->id;
+            }
+
+            // Fetch Ratings for fetched jobs in batch
+            $ratings = [];
+            if (!empty($jobIds)) {
+                $fbRows = DB::table('customer_feedback')
+                    ->whereIn('job_id', $jobIds)
+                    ->select('job_id', 'rating')
+                    ->get();
+                foreach ($fbRows as $fb) {
+                    $ratings[$fb->job_id] = $fb->rating;
                 }
             }
 
+            // Fetch Customer Data in batch
             $customerData = [];
             if (!empty($customerIds)) {
                 $custs = DB::table('customer_register')
@@ -1145,6 +1148,7 @@ class CreJobsController extends Controller
                 }
             }
 
+            // Fetch Driver Data in batch
             $driverData = [];
             if (!empty($driverIds)) {
                 $drvs = DB::table('user_register')
@@ -1168,51 +1172,43 @@ class CreJobsController extends Controller
                 }
             }
 
+            // Fetch Driver Locations (latest location per driver)
             $driverLocations = [];
             if (!empty($driverIds)) {
                 $locs = DB::table('drivers_current_location')
                     ->whereIn('user_id', array_keys($driverIds))
-                    ->orderBy('updated_at', 'desc')
                     ->get();
+
                 foreach ($locs as $loc) {
-                    if (!isset($driverLocations[$loc->user_id])) {
-                        $driverLocations[$loc->user_id] = [
-                            'lat'              => $loc->lat ?? null,
-                            'lng'              => $loc->lng ?? null,
-                            'current_state'    => $loc->current_state ?? '',
-                            'current_district' => $loc->current_district ?? '',
-                            'current_address'  => $loc->current_address ?? '',
-                            'updated_at'       => $loc->updated_at ?? null,
-                        ];
-                    }
+                    $driverLocations[$loc->user_id] = [
+                        'lat'              => $loc->lat ?? null,
+                        'lng'              => $loc->lng ?? null,
+                        'current_state'    => $loc->current_state ?? '',
+                        'current_district' => $loc->current_district ?? '',
+                        'current_address'  => $loc->current_address ?? '',
+                        'updated_at'       => $loc->updated_at ?? null,
+                    ];
                 }
             }
 
+            // Fast Push Notification Count Lookup
             $pushData = [];
             if (!empty($pushJobIds)) {
-                $chunks = array_chunk(array_values($pushJobIds), 50);
-                foreach ($chunks as $chunk) {
-                    $pushLogs = DB::table('push_notifications')
-                        ->where(function($q) use ($chunk) {
-                            foreach ($chunk as $jid) {
-                                $q->orWhere('req_json', 'LIKE', '%"job_id": ' . $jid . '%')
-                                  ->orWhere('req_json', 'LIKE', '%"job_id":' . $jid . '%');
-                            }
-                        })
-                        ->select(['req_json', 'res_json'])
-                        ->orderBy('id', 'asc')
-                        ->get();
+                $pushLogs = DB::table('push_notifications')
+                    ->select(['req_json', 'res_json'])
+                    ->where('deletes', '0')
+                    ->where('req_json', 'LIKE', '%"target":"drivers"%')
+                    ->orderBy('id', 'desc')
+                    ->limit(200)
+                    ->get();
 
-                    foreach ($pushLogs as $pLog) {
-                        if (!empty($pLog->res_json)) {
-                            $resArr = json_decode($pLog->res_json, true);
-                            if (isset($resArr['success_count'])) {
-                                foreach ($chunk as $jid) {
-                                    if (strpos($pLog->req_json, '"job_id": ' . $jid) !== false || strpos($pLog->req_json, '"job_id":' . $jid) !== false) {
-                                        $pushData[$jid] = (int)$resArr['success_count'];
-                                    }
-                                }
-                            }
+                foreach ($pushLogs as $pLog) {
+                    if (!empty($pLog->res_json) && !empty($pLog->req_json)) {
+                        $reqArr = json_decode($pLog->req_json, true);
+                        $resArr = json_decode($pLog->res_json, true);
+                        $jid    = $reqArr['job_id'] ?? null;
+                        if ($jid && isset($pushJobIds[$jid]) && isset($resArr['success_count'])) {
+                            $pushData[$jid] = (int)$resArr['success_count'];
                         }
                     }
                 }
@@ -1267,9 +1263,9 @@ class CreJobsController extends Controller
                 if (!empty($rawRow->fare_breakdown) && is_string($rawRow->fare_breakdown)) {
                     $fareData = json_decode($rawRow->fare_breakdown, true);
                     if (json_last_error() === JSON_ERROR_NONE && is_array($fareData)) {
-                        $totalFare = isset($fareData['total_fare']) ? (float)$fareData['total_fare'] : ((float)($rawRow->fare ?? 0));
+                        $totalFare  = isset($fareData['total_fare']) ? (float)$fareData['total_fare'] : ((float)($rawRow->fare ?? 0));
                         $commission = isset($fareData['com']) ? (float)$fareData['com'] : 0;
-                        $tax = isset($fareData['tax']) ? (float)$fareData['tax'] : (isset($fareData['tax_fare']) ? (float)$fareData['tax_fare'] : 0);
+                        $tax        = isset($fareData['tax']) ? (float)$fareData['tax'] : (isset($fareData['tax_fare']) ? (float)$fareData['tax_fare'] : 0);
                         if (isset($fareData['base_fare'])) {
                             $baseFare = (float)$fareData['base_fare'];
                         }
@@ -1299,8 +1295,8 @@ class CreJobsController extends Controller
                     if (!empty($rawRow->user_details)) {
                         $uDetails = is_string($rawRow->user_details) ? json_decode($rawRow->user_details, true) : (array)$rawRow->user_details;
                         $posterName = $uDetails['name'] ?? 'Website Customer';
-                        $mobile = $uDetails['mobile'] ?? '';
-                        $custEmail = $uDetails['email'] ?? '';
+                        $mobile     = $uDetails['mobile'] ?? '';
+                        $custEmail  = $uDetails['email'] ?? '';
                     } else {
                         $posterName = 'Website Customer';
                     }
@@ -1308,20 +1304,20 @@ class CreJobsController extends Controller
                     if (!empty($uid) && $uid != 0) {
                         if ($gType === 'driver' && isset($driverData[$uid])) {
                             $posterName = $driverData[$uid]['name'] ?? 'Driver Customer';
-                            $mobile = $driverData[$uid]['mobile'] ?? '';
-                            $custEmail = $driverData[$uid]['email'] ?? '';
+                            $mobile     = $driverData[$uid]['mobile'] ?? '';
+                            $custEmail  = $driverData[$uid]['email'] ?? '';
                         } elseif (isset($customerData[$uid])) {
                             $posterName = $customerData[$uid]['name'] ?? 'Customer';
-                            $mobile = $customerData[$uid]['mobile'] ?? '';
-                            $custEmail = $customerData[$uid]['email'] ?? '';
+                            $mobile     = $customerData[$uid]['mobile'] ?? '';
+                            $custEmail  = $customerData[$uid]['email'] ?? '';
                         }
                     }
                 }
 
                 $assignedTo = $rawRow->assigned_to ?? 0;
-                $driverLoc = isset($driverLocations[$assignedTo]) ? $driverLocations[$assignedTo] : null;
+                $driverLoc  = isset($driverLocations[$assignedTo]) ? $driverLocations[$assignedTo] : null;
 
-                $jobStatus = strtolower($rawRow->job_status ?? '');
+                $jobStatus   = strtolower($rawRow->job_status ?? '');
                 $statusLabel = 'Assigned';
                 if ($jobStatus === 'started') {
                     $statusLabel = 'Started';
@@ -1338,6 +1334,7 @@ class CreJobsController extends Controller
                 $finalJobs[] = [
                     'job_id'             => $rawRow->id,
                     'job_no'             => $jobNo,
+                    'job_type'         => $rawRow->job_type,
                     'job_status'         => $rawRow->job_status ?? 'assigned',
                     'status_label'       => $statusLabel,
                     'source'             => $source,
@@ -1359,7 +1356,7 @@ class CreJobsController extends Controller
                         'name'                => $rawRow->driver_name ?? ($driverData[$assignedTo]['name'] ?? 'Unassigned'),
                         'mobile'              => $rawRow->driver_mobile ?? ($driverData[$assignedTo]['mobile'] ?? ''),
                         'cab_type'            => $driverData[$assignedTo]['cab_type'] ?? 'Standard',
-                        'rating'              => $rawRow->fb_rating ?? null,
+                        'rating'              => $ratings[$rawRow->id] ?? null,
                         'lat'                 => $driverLoc['lat'] ?? null,
                         'lng'                 => $driverLoc['lng'] ?? null,
                         'current_state'       => $driverLoc['current_state'] ?? '',
