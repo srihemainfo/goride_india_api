@@ -5,9 +5,9 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\UserRegister;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class GlobalAuthDatabaseToken
 {
@@ -17,29 +17,44 @@ class GlobalAuthDatabaseToken
     public function handle(Request $request, Closure $next): Response
     {
         // 1. Extract the raw plain text Bearer Token from the header
-        $hashedToken = $request->bearerToken();
+        $rawToken = $request->bearerToken();
 
-        if (!$hashedToken) {
+        if (!$rawToken) {
             return response()->json([
                 'status'  => false,
                 'message' => 'Token missing.'
             ], 401);
         }
 
-        // Sanctum stores tokens hashed or split by a '|'. Let's parse it safely.
-        if (str_contains($hashedToken, '|')) {
-            [$id, $hashedToken] = explode('|', $hashedToken, 2);
+        // Sanctum stores tokens hashed or split by a '|'. Parse it safely.
+        $hashedToken = $rawToken;
+        if (str_contains($rawToken, '|')) {
+            [$id, $hashedToken] = explode('|', $rawToken, 2);
         }
         
         $tokenHash = hash('sha256', $hashedToken);
 
-        // 2. Query the personal_access_tokens table directly on the global_auth database
+        // 2. First check: Look in 'global_auth' database
         $tokenRecord = DB::connection('global_auth')
             ->table('personal_access_tokens')
             ->where('token', $tokenHash)
             ->first();
 
-        // 3. Verify if token exists and hasn't expired
+        $activeConnection = 'global_auth';
+
+        // 3. Fallback: If not found in global_auth, check 'mysql' database
+        if (!$tokenRecord) {
+            $tokenRecord = DB::connection('mysql')
+                ->table('personal_access_tokens')
+                ->where('token', $tokenHash)
+                ->first();
+
+            if ($tokenRecord) {
+                $activeConnection = 'mysql';
+            }
+        }
+
+        // 4. Verify if token exists and hasn't expired
         if (!$tokenRecord || ($tokenRecord->expires_at && now()->greaterThan($tokenRecord->expires_at))) {
             return response()->json([
                 'status'  => false,
@@ -47,9 +62,12 @@ class GlobalAuthDatabaseToken
             ], 401);
         }
 
-        // 4. Fetch the associated Customer User from the global_auth database
-        $userRecord = DB::connection('global_auth')
-            ->table('user_register')
+        // 5. Fetch user record using table based on connection
+        // mysql -> customer_register | global_auth -> user_register
+        $userTable = ($activeConnection === 'mysql') ? 'customer_register' : 'user_register';
+
+        $userRecord = DB::connection($activeConnection)
+            ->table($userTable)
             ->where('id', $tokenRecord->tokenable_id)
             ->first();
 
@@ -60,9 +78,51 @@ class GlobalAuthDatabaseToken
             ], 401);
         }
 
-        // 5. Hydrate the model dynamically and push it to Laravel's runtime auth memory
+        // 6. Migration Step: If found in 'mysql', copy User and Token to 'global_auth'
+        if ($activeConnection === 'mysql') {
+            $userData = (array) $userRecord;
+
+            DB::connection('global_auth')->transaction(function () use ($userData, $tokenRecord, &$userRecord) {
+                
+                // Insert user into global_auth.user_register
+                $getId = DB::connection('global_auth')
+                    ->table('user_register')
+                    ->insertGetId([
+                        'uuid'            => (string) Str::uuid(),
+                        'first_name'      => $userData['mobile'] ?? null,
+                        'email'           => $userData['mobile'] ?? null,
+                        'mobile'          => $userData['mobile'] ?? null,
+                        'mobile_verified' => 1,
+                        'firebase_uid'    => null,
+                        'login_provider'  => 'mobile',
+                        'created_at'      => now(),
+                        'updated_at'      => now()
+                    ]);
+
+                // Prepare token payload matching global_auth schema format
+                $tokenData = (array) $tokenRecord;
+                $tokenData['tokenable_type'] = 'App\Models\UserRegister';
+                $tokenData['tokenable_id']   = $getId;
+
+                // Insert token into global_auth.personal_access_tokens
+                DB::connection('global_auth')
+                    ->table('personal_access_tokens')
+                    ->updateOrInsert(
+                        ['token' => $tokenRecord->token],
+                        $tokenData
+                    );
+
+                // Update userRecord reference to reflect the newly created global_auth user
+                $userRecord = DB::connection('global_auth')
+                    ->table('user_register')
+                    ->where('id', $getId)
+                    ->first();
+            });
+        }
+
+        // 7. Hydrate the model dynamically and bind to 'global_auth'
         $userModel = new UserRegister();
-        $userModel->setConnection('global_auth'); // Bind model connection explicitly
+        $userModel->setConnection('global_auth');
         $userModel->forceFill((array) $userRecord);
         $userModel->exists = true;
 
