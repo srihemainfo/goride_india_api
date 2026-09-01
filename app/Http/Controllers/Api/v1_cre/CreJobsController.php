@@ -336,6 +336,8 @@ class CreJobsController extends Controller
                     'id',
                     'job_no',
                     'global_type',
+                    'user_id',
+                    'user_details',
                     'job_status',
                     'pick_address',
                     'drop_address',
@@ -370,8 +372,13 @@ class CreJobsController extends Controller
                 }
                 $jobNo = $job->job_no ?? ('GR-' . $job->id);
 
+                $userId = (int) ($job->user_id ?? 0);
+                $hasUserDetails = !empty($job->user_details);
+
                 $source = "From Website";
-                if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
+                if ($userId == 0 || $hasUserDetails) {
+                    $source = "From Website";
+                } elseif (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
                     $source = "From Customer App";
                 } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$job->global_type) === 'driver') {
                     $source = "From Driver App";
@@ -453,8 +460,13 @@ class CreJobsController extends Controller
 
             $jobNo = $job->job_no ?? ('GR-' . $job->id);
 
+            $userId = (int) ($job->user_id ?? 0);
+            $hasUserDetails = !empty($job->user_details);
+
             $source = "From Website";
-            if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
+            if ($userId == 0 || $hasUserDetails) {
+                $source = "From Website";
+            } elseif (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
                 $source = "From Customer App";
             } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$job->global_type) === 'driver') {
                 $source = "From Driver App";
@@ -531,19 +543,31 @@ class CreJobsController extends Controller
             $customerMobile = '';
             $profileImg     = null;
 
-            $userId = (int)($job->user_id ?? 0);
-            if ($userId > 0) {
-                $customer = DB::table('customer_register')->where('id', $userId)->first();
-                if ($customer) {
-                    $customerName   = $customer->name ?? '';
-                    $customerMobile = $customer->mobile ?? '';
-                    $profileImg     = $customer->img_url ?? null;
+            if ($source === "From Website" || $userId == 0 || !empty($details)) {
+                if (!empty($details)) {
+                    $customerName   = $details['name'] ?? ($details['customer_name'] ?? ($details['user_name'] ?? ''));
+                    $customerMobile = $details['mobile'] ?? ($details['phone'] ?? ($details['call_number'] ?? ''));
                 }
-            }
-
-            if (empty($customerName) && !empty($details)) {
-                $customerName   = $details['name'] ?? 'Website Customer';
-                $customerMobile = $details['mobile'] ?? '';
+                if (empty($customerName) && $userId > 0) {
+                    $customer = DB::table('customer_register')->where('id', $userId)->first();
+                    if ($customer) {
+                        $customerName   = $customer->name ?? '';
+                        $customerMobile = $customer->mobile ?? '';
+                        $profileImg     = $customer->img_url ?? null;
+                    }
+                }
+                if (empty($customerName)) {
+                    $customerName = 'Website Customer';
+                }
+            } else {
+                if ($userId > 0) {
+                    $customer = DB::table('customer_register')->where('id', $userId)->first();
+                    if ($customer) {
+                        $customerName   = $customer->name ?? '';
+                        $customerMobile = $customer->mobile ?? '';
+                        $profileImg     = $customer->img_url ?? null;
+                    }
+                }
             }
 
             $cleanMobile = trim((string) $customerMobile);
@@ -1093,17 +1117,18 @@ class CreJobsController extends Controller
 
             foreach ($jobs as $row) {
                 $jobIds[] = $row->id;
-                $uid   = $row->user_id ?? 0;
+                $uid   = (int) ($row->user_id ?? 0);
+                $hasUserDetails = !empty($row->user_details);
                 $gType = 'website';
                 $jobNo = $row->job_no ?? '';
 
-                if (isset($row->global_type) && $row->global_type === 'schedule') {
-                    $gType = 'schedule';
-                } elseif (empty($uid) || $uid == 0 || !empty($row->user_details)) {
+                if ($uid == 0 || $hasUserDetails) {
                     $gType = 'website';
-                } elseif (strpos($jobNo, 'GRC') === 0) {
+                } elseif (isset($row->global_type) && $row->global_type === 'schedule') {
+                    $gType = 'schedule';
+                } elseif (strpos($jobNo, 'GRC') === 0 || strtolower((string)$row->global_type) === 'customer') {
                     $gType = 'customer';
-                } elseif (strpos($jobNo, 'GRD') === 0) {
+                } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$row->global_type) === 'driver') {
                     $gType = 'driver';
                 }
 
@@ -1217,12 +1242,15 @@ class CreJobsController extends Controller
             $finalJobs = [];
             foreach ($jobs as $rawRow) {
                 $jobNo = $rawRow->job_no ?? ('GR-' . $rawRow->id);
+                $gType = $rawRow->calc_global_type ?? 'website';
 
                 $source = "From Website";
-                if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$rawRow->global_type) === 'customer') {
+                if ($gType === 'customer') {
                     $source = "From Customer App";
-                } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$rawRow->global_type) === 'driver') {
+                } elseif ($gType === 'driver') {
                     $source = "From Driver App";
+                } else {
+                    $source = "From Website";
                 }
 
                 $from = !empty($rawRow->pick_address) ? $rawRow->pick_address : ($rawRow->from_place ?? '');
@@ -1289,15 +1317,19 @@ class CreJobsController extends Controller
                 $mobile = '';
                 $custEmail = '';
 
-                $gType = $rawRow->calc_global_type ?? 'website';
-
                 if ($gType === 'website') {
                     if (!empty($rawRow->user_details)) {
                         $uDetails = is_string($rawRow->user_details) ? json_decode($rawRow->user_details, true) : (array)$rawRow->user_details;
-                        $posterName = $uDetails['name'] ?? 'Website Customer';
-                        $mobile     = $uDetails['mobile'] ?? '';
+                        $posterName = $uDetails['name'] ?? ($uDetails['customer_name'] ?? ($uDetails['user_name'] ?? ''));
+                        $mobile     = $uDetails['mobile'] ?? ($uDetails['phone'] ?? ($uDetails['call_number'] ?? ''));
                         $custEmail  = $uDetails['email'] ?? '';
-                    } else {
+                    }
+                    if (empty($posterName) && !empty($uid) && isset($customerData[$uid])) {
+                        $posterName = $customerData[$uid]['name'] ?? '';
+                        $mobile     = $customerData[$uid]['mobile'] ?? $mobile;
+                        $custEmail  = $customerData[$uid]['email'] ?? $custEmail;
+                    }
+                    if (empty($posterName)) {
                         $posterName = 'Website Customer';
                     }
                 } else {
@@ -1345,7 +1377,7 @@ class CreJobsController extends Controller
                     'passengers'         => $passengers,
                     'pass_count'         => $passCount,
                     'preview_hash'       => $previewHash,
-                    'amount'             => round($baseFare, 2),
+                    // 'amount'             => round($baseFare, 2),
                     'customer_paid'      => round($totalFare, 2),
                     'driver_amount'      => round($driverEarned, 2),
                     'commission'         => round($commission, 2),
