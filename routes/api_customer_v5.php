@@ -35,7 +35,7 @@ Route::post('/postJob', [CustomerAppController::class, 'postJob'])->name('postJo
 Route::post("/getlocation-demo", [CustomerAppController::class, 'GoogleLocations_demo'])->name('GoogleLocations_demo');
 Route::post("/getdistance-demo", [CustomerAppController::class, 'DistanceAndDuration_demo'])->name('getdistance_demo');
 
-Route::middleware(['customer.auth'])->group(function () {
+Route::middleware(['customer.newauth'])->group(function () {
     
     Route::post('/fcm-token', function (Request $request) {
         return response()->json(['message' => 'Not found'], 404);

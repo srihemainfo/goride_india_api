@@ -73,6 +73,7 @@ class Kernel extends HttpKernel
         'seotag' => \App\Http\Middleware\SeoTagMiddleware::class,
         'check.blocked' => \App\Http\Middleware\CheckBlockedUser::class,
         'customer.auth' => \App\Http\Middleware\CustomerAuthMiddleware::class,
+        'customer.newauth' => \App\Http\Middleware\CustomerAuthenticate::class,
         'driver.auth' => \App\Http\Middleware\DriverAuthMiddleware::class,
         'admin.apis' => \App\Http\Middleware\AdminApis::class,
         'multi.auth' => \App\Http\Middleware\MultiAuthToken::class,

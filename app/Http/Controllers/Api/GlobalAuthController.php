@@ -30,52 +30,56 @@ class GlobalAuthController extends Controller
     public function checkUser(Request $request)
     {
         try {
-    
-            $validator = Validator::make($request->all(),[
-                'login'=>'required|in:mobile,email',
-                'value'=>'required'
+            $validator = Validator::make($request->all(), [
+                'login' => 'required|in:mobile,email',
+                'value' => 'required'
             ]);
     
-            if($validator->fails())
-            {
+            if ($validator->fails()) {
                 return response()->json([
-                    'status'=>false,
-                    'message'=>$validator->errors()->first()
+                    'status' => false,
+                    'message' => $validator->errors()->first()
                 ]);
             }
-            
+    
             $type = $request->login;
+            $value = $request->value;
+            $connections = ['global_auth', 'mysql'];
+            
+            $user = null;
+            $foundInConnection = null;
     
-            $query = DB::connection('global_auth')
-                        ->table('user_register');
+            // Loop through connections and stop as soon as a record is found
+            foreach ($connections as $connection) {
+                $column = ($type === 'email') ? 'email' : 'mobile';
     
-            if($type == 'email')
-            {
-                $query->where('email',$request->value);
+                $user = DB::connection($connection)
+                    ->table('user_register')
+                    ->where($column, $value)
+                    ->first();
+    
+                if ($user) {
+                    $foundInConnection = $connection;
+                    break;
+                }
             }
-            else
-            {
-                $query->where('mobile',$request->value);
-            }
-    
-            $user = $query->first();
     
             return response()->json([
-                'status'=>true,
-                'exists'=>!empty($user),
-                'user'=>$user ? [
-                    'id'=>$user->id,
-                    'name'=>$user->first_name,
-                    'email'=>$user->email,
-                    'mobile'=>$user->mobile
+                'status' => true,
+                'exists' => !empty($user),
+                'avail' => $foundInConnection,
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->first_name,
+                    'email' => $user->email,
+                    'mobile' => $user->mobile
                 ] : null
             ]);
     
         } catch (\Exception $e) {
-    
             return response()->json([
-                'status'=>false,
-                'message'=>$e->getMessage()
+                'status' => false,
+                'message' => $e->getMessage()
             ]);
         }
     }
