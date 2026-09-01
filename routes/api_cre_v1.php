@@ -17,4 +17,5 @@ Route::middleware(['cre.auth'])->group(function () {
     Route::post('/cancel-job', [CreJobsController::class, 'cancelJob']);
     Route::get('/district-list', [CreJobsController::class, 'getDistrictList']);
     Route::post('/send-job-notification', [CreJobsController::class, 'sendJobNotification']);
+    Route::get('/get-driver-location', [CreJobsController::class, 'getDriverLocation']);
 });

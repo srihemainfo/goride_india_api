@@ -1422,4 +1422,24 @@ class CreJobsController extends Controller
             ], 500);
         }
     }
+    
+    public function getDriverLocation(Request $request)
+    {
+        try {
+            $location = DB::table('drivers_current_location')
+                ->where('user_id', $request->input('driver_id'))
+                ->select('lat', 'lng')
+                ->orderBy('updated_at', 'desc')
+                ->first();
+    
+            if (!$location) {
+                return response()->json(['status' => false, 'message' => 'not found']);
+            }
+    
+            return response()->json(['status' => true, 'data' => $location]);
+            
+        } catch (\Throwable $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }
