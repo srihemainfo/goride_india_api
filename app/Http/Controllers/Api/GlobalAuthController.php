@@ -45,6 +45,7 @@ class GlobalAuthController extends Controller
             $type = $request->login;
             $value = $request->value;
             $connections = ['global_auth', 'mysql'];
+            $tbl = ['global_auth' => 'user_register', 'mysql' => 'customer_register'];
             
             $user = null;
             $foundInConnection = null;
@@ -54,7 +55,7 @@ class GlobalAuthController extends Controller
                 $column = ($type === 'email') ? 'email' : 'mobile';
     
                 $user = DB::connection($connection)
-                    ->table('user_register')
+                    ->table($tbl[$connection])
                     ->where($column, $value)
                     ->first();
     
@@ -70,7 +71,7 @@ class GlobalAuthController extends Controller
                 'avail' => $foundInConnection,
                 'user' => $user ? [
                     'id' => $user->id,
-                    'name' => $user->first_name,
+                    'name' => $user->first_name??$user->name??null,
                     'email' => $user->email,
                     'mobile' => $user->mobile
                 ] : null
