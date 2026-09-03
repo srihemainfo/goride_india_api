@@ -376,12 +376,12 @@ class CreJobsController extends Controller
                 $hasUserDetails = !empty($job->user_details);
 
                 $source = "From Website";
-                if ($userId == 0 || $hasUserDetails) {
-                    $source = "From Website";
-                } elseif (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
-                    $source = "From Customer App";
+                if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
+                    $source = "Customer App Job";
                 } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$job->global_type) === 'driver') {
                     $source = "From Driver App";
+                } elseif ($userId == 0 || $hasUserDetails || strtolower((string)$job->global_type) === 'website') {
+                    $source = "From Website";
                 }
 
                 $badge = "New";
@@ -463,13 +463,19 @@ class CreJobsController extends Controller
             $userId = (int) ($job->user_id ?? 0);
             $hasUserDetails = !empty($job->user_details);
 
+            $details = [];
+            if (!empty($job->user_details)) {
+                $details = is_string($job->user_details) ? json_decode($job->user_details, true) : (array)$job->user_details;
+            }
+            if (!is_array($details)) $details = [];
+
             $source = "From Website";
-            if ($userId == 0 || $hasUserDetails) {
-                $source = "From Website";
-            } elseif (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
-                $source = "From Customer App";
+            if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$job->global_type) === 'customer') {
+                $source = "Customer App Job";
             } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$job->global_type) === 'driver') {
                 $source = "From Driver App";
+            } elseif ($userId == 0 || $hasUserDetails || strtolower((string)$job->global_type) === 'website') {
+                $source = "From Website";
             }
 
             $badge = "New";
@@ -494,15 +500,10 @@ class CreJobsController extends Controller
                 }
             }
 
-            $details = [];
-            if (!empty($job->user_details)) {
-                $details = is_string($job->user_details) ? json_decode($job->user_details, true) : (array)$job->user_details;
-            }
-            if (!is_array($details)) $details = [];
-
             $rawPass = $job->pass_count ?? ($details['pass_count'] ?? 1);
-            if (is_string($rawPass) && strtolower(trim($rawPass)) === 'mini') {
-                $passengers = "Mini";
+            $passClean = strtolower(trim((string)$rawPass));
+            if ($passClean === 'mini' || $passClean === '5 mini') {
+                $passengers = "5 Passengers";
             } elseif (is_numeric($rawPass)) {
                 $count = (int) $rawPass;
                 $passengers = $count . ($count == 1 ? ' Passenger' : ' Passengers');
@@ -510,21 +511,38 @@ class CreJobsController extends Controller
                 $passengers = (string) $rawPass;
             }
 
-            $luggage = null;
-            if ($source === "From Website") {
-                $luggCount = (int) ($details['lugg_count'] ?? ($details['luggage'] ?? 0));
-                $luggage   = $luggCount . ($luggCount == 1 ? ' Luggage' : ' Luggage');
+            $luggCount = (int) ($job->lugg_count ?? ($details['lugg_count'] ?? ($details['luggage'] ?? 0)));
+            $luggage   = $luggCount . ($luggCount == 1 ? ' Luggage' : ' Luggage');
+
+            $explicitVehicleType = null;
+            if (!empty($details['cab_type'])) {
+                $explicitVehicleType = $details['cab_type'];
+            } elseif (!empty($details['car_type'])) {
+                $explicitVehicleType = $details['car_type'];
+            } elseif (!empty($job->car_type)) {
+                $explicitVehicleType = $job->car_type;
+            } elseif (!empty($job->cab_type)) {
+                $explicitVehicleType = $job->cab_type;
             }
 
-            $vehicleType = null;
-            if (!empty($details['cab_type'])) {
-                $vehicleType = $details['cab_type'];
-            } elseif (!empty($details['car_type'])) {
-                $vehicleType = $details['car_type'];
-            } elseif (!empty($job->car_type)) {
-                $vehicleType = $job->car_type;
-            } elseif (!empty($job->cab_type)) {
-                $vehicleType = $job->cab_type;
+            if ($source === "From Website" && !empty($hasUserDetails) && !empty($explicitVehicleType)) {
+                $vehicleType = $explicitVehicleType;
+            } else {
+                if ($passClean === '5 mini' || $passClean === 'mini') {
+                    $vehicleType = "Go Mini";
+                } elseif ($passClean === '8' || (int)$rawPass === 8) {
+                    $vehicleType = "Go 7Seater";
+                } elseif ($passClean === '7' || (int)$rawPass === 7) {
+                    $vehicleType = "Go 6Seater";
+                } elseif ($passClean === '5' || (int)$rawPass === 5) {
+                    $vehicleType = "Go 4Seater";
+                } elseif ($passClean === '4' || (int)$rawPass === 4) {
+                    $vehicleType = "Go 4Seater";
+                } elseif ($passClean === '6' || (int)$rawPass === 6) {
+                    $vehicleType = "Go 6Seater";
+                } else {
+                    $vehicleType = $explicitVehicleType ?? "Go 4Seater";
+                }
             }
 
             $rawJobType = $details['job_type'] ?? ($details['trip_type'] ?? ($job->job_type ?? 'One Way'));
@@ -538,6 +556,16 @@ class CreJobsController extends Controller
             }
 
             $specialNotes = !empty($job->job_remark) ? $job->job_remark : ($job->comments ?? ($details['special_notes'] ?? ($details['notes'] ?? '')));
+
+            $distance = $job->distance ?? ($details['distance'] ?? '');
+            $duration = $job->duration ?? ($details['duration'] ?? '');
+            $day = $job->day ?? ($details['day'] ?? '');
+
+            // Coordinate extraction based on image_5ff39f.png
+            $pickLat = $job->pick_lat ?? ($details['pick_lat'] ?? '');
+            $pickLan = $job->pick_lan ?? ($details['pick_lan'] ?? '');
+            $dropLat = $job->drop_lat ?? ($details['drop_lat'] ?? '');
+            $dropLan = $job->drop_lan ?? ($details['drop_lan'] ?? '');
 
             $customerName   = '';
             $customerMobile = '';
@@ -581,25 +609,43 @@ class CreJobsController extends Controller
                 'whatsapp_number' => $cleanDigits,
             ];
 
+            // Build base response data
+            $responseData = [
+                'job_id'           => $job->id,
+                'job_no'           => $jobNo,
+                'badge'            => $badge,
+                'source'           => $source,
+                'from'             => $from,
+                'to'               => $to,
+                'pick_lat'         => (string) $pickLat,
+                'pick_lan'         => (string) $pickLan,
+                'drop_lat'         => (string) $dropLat,
+                'drop_lan'         => (string) $dropLan,
+                'distance'         => (string) $distance,
+                'duration'         => (string) $duration,
+            ];
+
+            // Only conditionally include 'days' if it is a Round Trip
+            if ($jobType === 'Round Trip' || $cleanType === 'round trip') {
+                $responseData['days'] = (string) $day;
+            }
+
+            // Append the remaining details
+            $responseData = array_merge($responseData, [
+                'date'             => $formattedDate,
+                'time'             => $formattedTime,
+                'passengers'       => $passengers,
+                'luggage'          => $luggage,
+                'job_type'         => $jobType,
+                'vehicle_type'     => $vehicleType,
+                'special_notes'    => $specialNotes,
+                'customer_details' => $customerDetails,
+            ]);
+
             return response()->json([
                 'status'  => true,
                 'message' => 'Job details retrieved successfully',
-                'data'    => [
-                    'job_id'           => $job->id,
-                    'job_no'           => $jobNo,
-                    'badge'            => $badge,
-                    'source'           => $source,
-                    'from'             => $from,
-                    'to'               => $to,
-                    'date'             => $formattedDate,
-                    'time'             => $formattedTime,
-                    'passengers'       => $passengers,
-                    'luggage'          => $luggage,
-                    'job_type'         => $jobType,
-                    'vehicle_type'     => $vehicleType,
-                    'special_notes'    => $specialNotes,
-                    'customer_details' => $customerDetails,
-                ]
+                'data'    => $responseData
             ], 200);
 
         } catch (\Throwable $e) {
@@ -1122,14 +1168,14 @@ class CreJobsController extends Controller
                 $gType = 'website';
                 $jobNo = $row->job_no ?? '';
 
-                if ($uid == 0 || $hasUserDetails) {
-                    $gType = 'website';
-                } elseif (isset($row->global_type) && $row->global_type === 'schedule') {
-                    $gType = 'schedule';
-                } elseif (strpos($jobNo, 'GRC') === 0 || strtolower((string)$row->global_type) === 'customer') {
+                if (strpos($jobNo, 'GRC') === 0 || strtolower((string)$row->global_type) === 'customer') {
                     $gType = 'customer';
                 } elseif (strpos($jobNo, 'GRD') === 0 || strtolower((string)$row->global_type) === 'driver') {
                     $gType = 'driver';
+                } elseif (isset($row->global_type) && $row->global_type === 'schedule') {
+                    $gType = 'schedule';
+                } elseif ($uid == 0 || $hasUserDetails) {
+                    $gType = 'website';
                 }
 
                 $row->calc_global_type = $gType;
@@ -1246,7 +1292,7 @@ class CreJobsController extends Controller
 
                 $source = "From Website";
                 if ($gType === 'customer') {
-                    $source = "From Customer App";
+                    $source = "Customer App Job";
                 } elseif ($gType === 'driver') {
                     $source = "From Driver App";
                 } else {
